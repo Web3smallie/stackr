@@ -1,55 +1,118 @@
-import { motion } from "framer-motion";
-import { ArrowRight, Zap, Globe, Shield, Wallet } from "lucide-react";
+import { motion, useInView } from "framer-motion";
+import { useRef } from "react";
+import {
+  ArrowRight,
+  Zap,
+  Globe,
+  Shield,
+  Lock,
+  Target,
+  BarChart3,
+  RefreshCw,
+  Wallet,
+  Sparkles,
+} from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useNavigate } from "react-router-dom";
+import Footer from "@/components/Footer";
 
 const stats = [
   { value: "1.4B", label: "Creators underserved" },
   { value: "<1s", label: "Transaction speed" },
-  { value: "$0", label: "Platform fees" },
-  { value: "195+", label: "Countries supported" },
+  { value: "1%", label: "Platform fee" },
+  { value: "190+", label: "Countries supported" },
 ];
 
 const features = [
   {
     icon: Zap,
-    title: "Instant Settlement",
-    description: "Payments arrive in your wallet the moment they're sent. No 3-5 business days. No holds.",
+    title: "Instant Payments",
+    description: "Receive SOL, USDC, or any Bags token the moment it's sent. No holds, no delays.",
   },
   {
     icon: Globe,
-    title: "Borderless by Default",
-    description: "Works everywhere Solana works. No KYC barriers, no geographic restrictions, no banking requirements.",
+    title: "No Bank Needed",
+    description: "Works for anyone, anywhere in the world. No KYC, no bank account, no restrictions.",
   },
   {
-    icon: Shield,
-    title: "Self-Custodial",
-    description: "Your keys, your money. We never touch your funds. Every transaction is on-chain and verifiable.",
+    icon: Lock,
+    title: "Token Gated Content",
+    description: "Lock your best content behind payments. Fans pay to unlock exclusive drops.",
   },
+  {
+    icon: Target,
+    title: "Fundraising Goals",
+    description: "Set targets and watch them fill up. Perfect for projects, campaigns, and group funding.",
+  },
+  {
+    icon: BarChart3,
+    title: "Revenue Analytics",
+    description: "Track every payment, supporter, and trend with beautiful real-time dashboards.",
+  },
+  {
+    icon: RefreshCw,
+    title: "Recurring Support",
+    description: "Fans subscribe to support you monthly. Predictable income, built on-chain.",
+  },
+];
+
+const steps = [
+  {
+    step: "01",
+    title: "Connect Your Wallet",
+    description: "Link any Solana wallet — Phantom, Backpack, Solflare, or Bags.",
+  },
+  {
+    step: "02",
+    title: "Create Your Page",
+    description: "AI generates your creator page in 60 seconds. Customize everything.",
+  },
+  {
+    step: "03",
+    title: "Share & Earn",
+    description: "Share your link anywhere. Start receiving crypto payments instantly.",
+  },
+];
+
+const livePayments = [
+  { name: "Sarah", amount: "2.5 SOL", time: "just now" },
+  { name: "Marcus", amount: "50 USDC", time: "2m ago" },
+  { name: "Aisha", amount: "1.2 SOL", time: "5m ago" },
+  { name: "Dev", amount: "100 USDC", time: "8m ago" },
+  { name: "Luna", amount: "0.8 SOL", time: "12m ago" },
 ];
 
 const container = {
   hidden: { opacity: 0 },
   show: {
     opacity: 1,
-    transition: { staggerChildren: 0.05 },
+    transition: { staggerChildren: 0.06 },
   },
 };
 
 const item = {
-  hidden: { opacity: 0, y: 10 },
-  show: { opacity: 1, y: 0, transition: { duration: 0.4, ease: [0.16, 1, 0.3, 1] as [number, number, number, number] } },
+  hidden: { opacity: 0, y: 12 },
+  show: {
+    opacity: 1,
+    y: 0,
+    transition: { duration: 0.5, ease: [0.16, 1, 0.3, 1] as [number, number, number, number] },
+  },
 };
 
 const LandingPage = () => {
   const navigate = useNavigate();
+  const heroRef = useRef(null);
+  const heroInView = useInView(heroRef, { once: true });
 
   return (
-    <div className="min-h-screen bg-background">
+    <div className="min-h-screen gradient-bg">
       {/* Header */}
-      <header className="fixed top-0 left-0 right-0 z-50 bg-background/80 backdrop-blur-sm border-b border-border">
+      <header className="fixed top-0 left-0 right-0 z-50 glass">
         <div className="max-w-6xl mx-auto px-6 h-16 flex items-center justify-between">
-          <span className="font-display text-xl font-bold text-foreground">STACKR</span>
+          <div className="flex items-center gap-2">
+            <Sparkles className="w-5 h-5 text-accent" />
+            <span className="font-display text-xl font-bold text-foreground">STACKR</span>
+          </div>
           <div className="flex items-center gap-3">
             <Button variant="ghost" size="sm" onClick={() => navigate("/dashboard")}>
               Dashboard
@@ -64,43 +127,76 @@ const LandingPage = () => {
 
       {/* Hero */}
       <motion.section
-        className="pt-32 pb-20 px-6"
+        ref={heroRef}
+        className="pt-36 pb-24 px-6"
         variants={container}
         initial="hidden"
-        animate="show"
+        animate={heroInView ? "show" : "hidden"}
       >
-        <div className="max-w-4xl mx-auto">
-          <motion.p variants={item} className="text-sm font-medium text-muted-foreground mb-4 tracking-wide uppercase">
+        <div className="max-w-5xl mx-auto text-center">
+          <motion.div
+            variants={item}
+            className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full border border-border/60 bg-card/40 text-xs text-muted-foreground mb-8"
+          >
+            <span className="w-1.5 h-1.5 rounded-full bg-success animate-pulse" />
             Built on Solana · Powered by Bags.fm
-          </motion.p>
+          </motion.div>
           <motion.h1
             variants={item}
-            className="font-display text-5xl sm:text-6xl lg:text-7xl font-bold text-foreground leading-[1.05] mb-6"
+            className="font-display text-5xl sm:text-6xl lg:text-7xl xl:text-8xl font-extrabold text-foreground leading-[1.02] mb-6"
           >
-            Stack your earnings.
+            Get Paid in Crypto.
             <br />
-            No bank required.
+            <span className="text-gradient">Anywhere. Instantly.</span>
           </motion.h1>
           <motion.p
             variants={item}
-            className="text-lg text-muted-foreground max-w-xl mb-10 leading-relaxed"
+            className="text-lg sm:text-xl text-muted-foreground max-w-2xl mx-auto mb-10 leading-relaxed"
           >
-            The payment infrastructure for the world's creators. Generate a link, share it anywhere, receive SOL or USDC instantly.
+            1.4 billion creators worldwide can't use PayPal or Stripe. STACKR gives every creator on earth a payment page with just a Solana wallet.
           </motion.p>
-          <motion.div variants={item} className="flex flex-wrap gap-3">
-            <Button size="xl" onClick={() => navigate("/dashboard")}>
-              Create Your First Stack
+          <motion.div variants={item} className="flex flex-wrap justify-center gap-3">
+            <Button size="xl" onClick={() => navigate("/create")}>
+              Create Your Page
               <ArrowRight className="w-4 h-4 ml-1" />
             </Button>
             <Button variant="outline" size="xl">
-              How It Works
+              See How It Works
             </Button>
           </motion.div>
         </div>
       </motion.section>
 
+      {/* Live Payment Feed (floating cards) */}
+      <section className="pb-16 px-6 overflow-hidden">
+        <div className="max-w-4xl mx-auto">
+          <motion.div
+            className="flex gap-3 justify-center flex-wrap"
+            variants={container}
+            initial="hidden"
+            whileInView="show"
+            viewport={{ once: true }}
+          >
+            {livePayments.map((payment, i) => (
+              <motion.div
+                key={i}
+                variants={item}
+                className="flex items-center gap-2 px-4 py-2 rounded-xl border border-border/50 bg-card/50 glass text-sm"
+              >
+                <span className="w-6 h-6 rounded-full gradient-primary flex items-center justify-center text-xs font-bold text-primary-foreground">
+                  {payment.name[0]}
+                </span>
+                <span className="text-muted-foreground">{payment.name} received</span>
+                <span className="font-semibold text-foreground">{payment.amount}</span>
+                <span className="text-xs text-muted-foreground/60">· {payment.time}</span>
+              </motion.div>
+            ))}
+          </motion.div>
+        </div>
+      </section>
+
       {/* Stats */}
-      <section className="border-y border-border bg-secondary/50">
+      <section className="border-y border-border/50 bg-secondary/30">
         <div className="max-w-6xl mx-auto px-6">
           <motion.div
             className="grid grid-cols-2 md:grid-cols-4"
@@ -113,9 +209,11 @@ const LandingPage = () => {
               <motion.div
                 key={stat.label}
                 variants={item}
-                className={`py-10 px-4 text-center ${i < stats.length - 1 ? "md:border-r border-border" : ""}`}
+                className={`py-10 px-4 text-center ${i < stats.length - 1 ? "md:border-r border-border/40" : ""}`}
               >
-                <div className="font-display text-3xl font-bold text-foreground tabular-nums">{stat.value}</div>
+                <div className="font-display text-3xl sm:text-4xl font-bold text-foreground tabular-nums">
+                  {stat.value}
+                </div>
                 <div className="text-sm text-muted-foreground mt-1">{stat.label}</div>
               </motion.div>
             ))}
@@ -123,11 +221,25 @@ const LandingPage = () => {
         </div>
       </section>
 
-      {/* Features */}
+      {/* Features Grid */}
       <section className="py-24 px-6">
         <div className="max-w-6xl mx-auto">
           <motion.div
-            className="grid md:grid-cols-3 gap-6"
+            className="text-center mb-16"
+            initial={{ opacity: 0, y: 12 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true }}
+            transition={{ duration: 0.5 }}
+          >
+            <h2 className="font-display text-3xl sm:text-4xl font-bold text-foreground mb-3">
+              Everything creators need
+            </h2>
+            <p className="text-muted-foreground max-w-lg mx-auto">
+              A complete financial infrastructure built on Solana. No middlemen, no borders, no limits.
+            </p>
+          </motion.div>
+          <motion.div
+            className="grid sm:grid-cols-2 lg:grid-cols-3 gap-5"
             variants={container}
             initial="hidden"
             whileInView="show"
@@ -137,12 +249,14 @@ const LandingPage = () => {
               <motion.div
                 key={feature.title}
                 variants={item}
-                className="border border-border rounded-xl p-6 bg-card hover:-translate-y-0.5 hover:shadow-md transition-all duration-200 ease-out-expo"
+                className="border border-border/50 rounded-xl p-6 bg-card/40 glass hover:-translate-y-1 hover:glow-card transition-all duration-300 ease-out"
               >
-                <div className="w-10 h-10 rounded-lg bg-secondary flex items-center justify-center mb-4">
-                  <feature.icon className="w-5 h-5 text-foreground" />
+                <div className="w-10 h-10 rounded-lg gradient-primary flex items-center justify-center mb-4">
+                  <feature.icon className="w-5 h-5 text-primary-foreground" />
                 </div>
-                <h3 className="font-display text-lg font-semibold text-foreground mb-2">{feature.title}</h3>
+                <h3 className="font-display text-lg font-semibold text-foreground mb-2">
+                  {feature.title}
+                </h3>
                 <p className="text-sm text-muted-foreground leading-relaxed">{feature.description}</p>
               </motion.div>
             ))}
@@ -150,37 +264,85 @@ const LandingPage = () => {
         </div>
       </section>
 
-      {/* CTA */}
-      <section className="border-t border-border py-24 px-6">
+      {/* How It Works */}
+      <section id="how-it-works" className="py-24 px-6 border-t border-border/50">
+        <div className="max-w-4xl mx-auto">
+          <motion.div
+            className="text-center mb-16"
+            initial={{ opacity: 0, y: 12 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true }}
+            transition={{ duration: 0.5 }}
+          >
+            <h2 className="font-display text-3xl sm:text-4xl font-bold text-foreground mb-3">
+              Three steps. That's it.
+            </h2>
+            <p className="text-muted-foreground">From zero to earning in under 60 seconds.</p>
+          </motion.div>
+          <motion.div
+            className="grid md:grid-cols-3 gap-8"
+            variants={container}
+            initial="hidden"
+            whileInView="show"
+            viewport={{ once: true }}
+          >
+            {steps.map((s) => (
+              <motion.div key={s.step} variants={item} className="text-center">
+                <div className="font-display text-5xl font-extrabold text-primary/30 mb-3">
+                  {s.step}
+                </div>
+                <h3 className="font-display text-lg font-semibold text-foreground mb-2">{s.title}</h3>
+                <p className="text-sm text-muted-foreground leading-relaxed">{s.description}</p>
+              </motion.div>
+            ))}
+          </motion.div>
+        </div>
+      </section>
+
+      {/* Story / Mission */}
+      <section className="py-24 px-6 border-t border-border/50">
         <motion.div
-          className="max-w-2xl mx-auto text-center"
-          initial={{ opacity: 0, y: 10 }}
+          className="max-w-3xl mx-auto text-center"
+          initial={{ opacity: 0, y: 12 }}
           whileInView={{ opacity: 1, y: 0 }}
           viewport={{ once: true }}
-          transition={{ duration: 0.4, ease: [0.16, 1, 0.3, 1] }}
+          transition={{ duration: 0.6 }}
+        >
+          <blockquote className="font-display text-xl sm:text-2xl font-medium text-foreground leading-relaxed mb-6">
+            "Stackr was built for the 1.4 billion creators worldwide who cannot access PayPal, Stripe, or traditional banking. Whether you're a musician in Lagos, an artist in Manila, or a developer in Cairo — if you have a Solana wallet, you have a complete payment infrastructure."
+          </blockquote>
+          <div className="inline-flex items-center gap-2 text-sm text-muted-foreground">
+            <span className="w-8 h-px bg-accent/40" />
+            <span>That's Stackr.</span>
+            <span className="w-8 h-px bg-accent/40" />
+          </div>
+        </motion.div>
+      </section>
+
+      {/* CTA */}
+      <section className="py-24 px-6 border-t border-border/50">
+        <motion.div
+          className="max-w-2xl mx-auto text-center"
+          initial={{ opacity: 0, y: 12 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          viewport={{ once: true }}
+          transition={{ duration: 0.5 }}
         >
           <h2 className="font-display text-3xl sm:text-4xl font-bold text-foreground mb-4">
             Ready to start stacking?
           </h2>
           <p className="text-muted-foreground mb-8">
-            Connect your Solana wallet and create your first payment link in under 30 seconds.
+            Connect your Solana wallet and create your payment page in under 60 seconds.
           </p>
-          <Button size="xl" onClick={() => navigate("/dashboard")}>
-            Get Started
+          <Button size="xl" onClick={() => navigate("/create")}>
+            Get Started — It's Free
             <ArrowRight className="w-4 h-4 ml-1" />
           </Button>
         </motion.div>
       </section>
 
       {/* Footer */}
-      <footer className="border-t border-border py-8 px-6">
-        <div className="max-w-6xl mx-auto flex flex-col sm:flex-row items-center justify-between gap-4">
-          <span className="font-display text-sm font-bold text-foreground">STACKR</span>
-          <p className="text-xs text-muted-foreground">
-            Built on Solana. Powered by Bags.fm. © 2026
-          </p>
-        </div>
-      </footer>
+      <Footer />
     </div>
   );
 };
