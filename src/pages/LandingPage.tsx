@@ -9,11 +9,15 @@ import {
   BarChart3,
   RefreshCw,
   Wallet,
+  ShieldCheck,
+  Vault,
+  Users,
+  CreditCard,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
 import { useNavigate } from "react-router-dom";
 import Footer from "@/components/Footer";
-
 const stats = [
   { value: "1.4B", label: "Creators underserved" },
   { value: "<1s", label: "Transaction speed" },
@@ -51,6 +55,42 @@ const features = [
     icon: RefreshCw,
     title: "Recurring Support",
     description: "Fans subscribe to support you monthly. Predictable income, built on-chain.",
+  },
+];
+
+const products = [
+  {
+    icon: CreditCard,
+    name: "Stackr Pay",
+    description: "Instant crypto payments for creators and anyone who needs to get paid. Send a link, get paid in seconds.",
+    tokens: [
+      { name: "SOL", color: "bg-orange-500/20 text-orange-400 border-orange-500/30" },
+      { name: "USDC", color: "bg-blue-500/20 text-blue-400 border-blue-500/30" },
+      { name: "USDT", color: "bg-green-500/20 text-green-400 border-green-500/30" },
+      { name: "Bags", color: "bg-purple-500/20 text-purple-400 border-purple-500/30" },
+    ],
+  },
+  {
+    icon: Vault,
+    name: "Stackr Vault",
+    description: "Locked savings goals like PiggyVest. Lock your crypto until your goal date. Build discipline, stack harder.",
+    tokens: [
+      { name: "SOL", color: "bg-orange-500/20 text-orange-400 border-orange-500/30" },
+      { name: "USDC", color: "bg-blue-500/20 text-blue-400 border-blue-500/30" },
+      { name: "USDT", color: "bg-green-500/20 text-green-400 border-green-500/30" },
+      { name: "Bags", color: "bg-purple-500/20 text-purple-400 border-purple-500/30" },
+    ],
+  },
+  {
+    icon: Users,
+    name: "Stackr Pool",
+    description: "Community investment pools like mutual funds. Pool money together, vote on Bags tokens, share profits.",
+    tokens: [
+      { name: "SOL", color: "bg-orange-500/20 text-orange-400 border-orange-500/30" },
+      { name: "USDC", color: "bg-blue-500/20 text-blue-400 border-blue-500/30" },
+      { name: "USDT", color: "bg-green-500/20 text-green-400 border-green-500/30" },
+      { name: "Bags", color: "bg-purple-500/20 text-purple-400 border-purple-500/30" },
+    ],
   },
 ];
 
@@ -178,6 +218,64 @@ const LandingPage = () => {
           </motion.div>
         </div>
       </motion.section>
+
+      {/* Three Ways to Stack */}
+      <section className="py-24 px-6">
+        <div className="max-w-6xl mx-auto">
+          <motion.div
+            className="text-center mb-16"
+            initial={{ opacity: 0, y: 12 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true }}
+            transition={{ duration: 0.5 }}
+          >
+            <h2 className="font-display text-3xl sm:text-4xl font-bold text-foreground mb-3">
+              Three Ways to Stack
+            </h2>
+            <p className="text-muted-foreground max-w-lg mx-auto">
+              Pay, save, and invest — all on Solana. Pick your play.
+            </p>
+          </motion.div>
+          <motion.div
+            className="grid md:grid-cols-3 gap-6"
+            variants={container}
+            initial="hidden"
+            whileInView="show"
+            viewport={{ once: true }}
+          >
+            {products.map((product) => (
+              <motion.div
+                key={product.name}
+                variants={item}
+                className="relative border border-border/50 rounded-xl p-8 bg-card/40 glass hover:-translate-y-1 hover:glow-card transition-all duration-300 ease-out group"
+              >
+                <div className="w-12 h-12 rounded-xl gradient-primary flex items-center justify-center mb-5">
+                  <product.icon className="w-6 h-6 text-primary-foreground" />
+                </div>
+                <h3 className="font-display text-xl font-bold text-foreground mb-2">
+                  {product.name}
+                </h3>
+                <p className="text-sm text-muted-foreground leading-relaxed mb-5">
+                  {product.description}
+                </p>
+                <div className="flex flex-wrap gap-2 mb-6">
+                  {product.tokens.map((token) => (
+                    <span
+                      key={token.name}
+                      className={`px-2.5 py-1 rounded-full text-xs font-semibold border ${token.color}`}
+                    >
+                      {token.name}
+                    </span>
+                  ))}
+                </div>
+                <Button variant="ghost" size="sm" className="text-accent hover:text-foreground p-0 h-auto">
+                  Learn More <ArrowRight className="w-3.5 h-3.5 ml-1" />
+                </Button>
+              </motion.div>
+            ))}
+          </motion.div>
+        </div>
+      </section>
 
       {/* Live Payment Feed (floating cards) */}
       <section className="pb-16 px-6 overflow-hidden">
@@ -329,6 +427,84 @@ const LandingPage = () => {
             <span className="w-8 h-px bg-accent/40" />
           </div>
         </motion.div>
+      </section>
+
+      {/* Privacy First */}
+      <section className="py-24 px-6 border-t border-border/50">
+        <div className="max-w-6xl mx-auto">
+          <motion.div
+            className="text-center mb-16"
+            initial={{ opacity: 0, y: 12 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true }}
+            transition={{ duration: 0.5 }}
+          >
+            <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full border border-border/60 bg-card/40 text-xs text-accent mb-6">
+              <ShieldCheck className="w-3.5 h-3.5" />
+              Privacy Protected
+            </div>
+            <h2 className="font-display text-3xl sm:text-4xl font-bold text-foreground mb-3">
+              Your money. Your business.
+            </h2>
+            <p className="text-muted-foreground max-w-xl mx-auto">
+              Stackr is built privacy-first. No public directories, no exposed earnings, no data leaks.
+            </p>
+          </motion.div>
+          <motion.div
+            className="grid sm:grid-cols-2 lg:grid-cols-3 gap-5"
+            variants={container}
+            initial="hidden"
+            whileInView="show"
+            viewport={{ once: true }}
+          >
+            {[
+              {
+                icon: Lock,
+                title: "No Public Directory",
+                description: "Your page is only accessible via direct link. Never discoverable by browsing or search.",
+              },
+              {
+                icon: ShieldCheck,
+                title: "Minimal Public Info",
+                description: "Payment pages show only your name, description, and pay button. Nothing else.",
+              },
+              {
+                title: "Anonymous Payments",
+                icon: Wallet,
+                description: "Supporters can pay without revealing their wallet address publicly.",
+              },
+              {
+                title: "Private Earnings",
+                icon: BarChart3,
+                description: "Earnings and payment history are completely private — only visible to you in your dashboard.",
+              },
+              {
+                title: "Privacy Controls",
+                icon: Target,
+                description: "Toggle visibility of earnings, supporter count, payment history, and profile photo.",
+              },
+              {
+                title: "Non-Custodial",
+                icon: Globe,
+                description: "We never hold your funds. Payments go directly to your wallet on-chain.",
+              },
+            ].map((feature) => (
+              <motion.div
+                key={feature.title}
+                variants={item}
+                className="border border-border/50 rounded-xl p-6 bg-card/40 glass"
+              >
+                <div className="w-10 h-10 rounded-lg bg-accent/10 border border-accent/20 flex items-center justify-center mb-4">
+                  <feature.icon className="w-5 h-5 text-accent" />
+                </div>
+                <h3 className="font-display text-lg font-semibold text-foreground mb-2">
+                  {feature.title}
+                </h3>
+                <p className="text-sm text-muted-foreground leading-relaxed">{feature.description}</p>
+              </motion.div>
+            ))}
+          </motion.div>
+        </div>
       </section>
 
       {/* CTA */}
