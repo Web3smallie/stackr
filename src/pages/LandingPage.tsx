@@ -169,10 +169,6 @@ const LandingPage = () => {
             <Button variant="ghost" size="sm" onClick={() => navigate("/dashboard")}>
               Dashboard
             </Button>
-            <Button variant="wallet" size="sm">
-              <Wallet className="w-4 h-4 mr-1" />
-              Connect Wallet
-            </Button>
           </div>
         </div>
       </header>
