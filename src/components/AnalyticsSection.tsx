@@ -20,7 +20,7 @@ const AnalyticsSection = () => {
   return (
     <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }}>
       <div className="mb-6"><h2 className="font-display text-2xl font-bold text-foreground flex items-center gap-2"><BarChart3 className="w-6 h-6 text-primary" />Analytics</h2><p className="text-sm text-muted-foreground mt-1">Views, conversion, revenue, top supporters and token mix.</p></div>
-      {!hasRealData && <DemoNotice message="These are demo analytics — real data will appear as you receive activity." />}
+      
       
       <div className={`relative ${!hasRealData ? "opacity-70" : ""}`}>
         {!hasRealData && <DemoWatermark />}
