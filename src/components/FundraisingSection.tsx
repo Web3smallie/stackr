@@ -6,7 +6,7 @@ import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
 import { toast } from "@/hooks/use-toast";
-import DemoBadge, { DemoNotice } from "@/components/DemoBadge";
+import DemoBadge from "@/components/DemoBadge";
 
 const tokenColors: Record<string, string> = {
   SOL: "bg-orange-500/20 text-orange-400 border-orange-500/30",

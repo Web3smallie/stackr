@@ -9,7 +9,7 @@ import { Switch } from "@/components/ui/switch";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "@/hooks/use-toast";
-import DemoBadge, { DemoNotice } from "@/components/DemoBadge";
+import DemoBadge from "@/components/DemoBadge";
 
 const tokenOptions = ["SOL", "USDC", "USDT", "BAGS"] as const;
 const tokenColors: Record<string, string> = {
