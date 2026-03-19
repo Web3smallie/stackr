@@ -1,7 +1,7 @@
 import { motion } from "framer-motion";
 import { BarChart3, TrendingUp, Eye, Users, Calendar, Globe } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
-import { DemoNotice, DemoWatermark } from "@/components/DemoBadge";
+import { DemoWatermark } from "@/components/DemoBadge";
 
 const tokenColors: Record<string, string> = {
   SOL: "bg-orange-500/20 text-orange-400 border-orange-500/30",
