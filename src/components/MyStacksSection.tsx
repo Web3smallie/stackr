@@ -43,7 +43,6 @@ const MyStacksSection = () => {
   const [creating, setCreating] = useState(false);
   const [form, setForm] = useState({ title: "", slug: "", description: "", accepted_tokens: ["SOL", "USDC", "USDT", "BAGS"] as string[], suggested_amounts: "1, 5, 10, 25", is_private: false });
 
-  // Username availability
   const [slugAvailable, setSlugAvailable] = useState<boolean | null>(null);
   const [checkingSlug, setCheckingSlug] = useState(false);
 
@@ -58,7 +57,6 @@ const MyStacksSection = () => {
     setLoading(false);
   };
 
-  // Check slug availability with debounce
   useEffect(() => {
     if (!form.slug || form.slug.length < 3) { setSlugAvailable(null); return; }
     setCheckingSlug(true);
@@ -71,7 +69,6 @@ const MyStacksSection = () => {
   }, [form.slug]);
 
   const hasRealStacks = stacks.length > 0;
-
   const previewLink = useMemo(() => `getstackr.app/${form.slug || "username"}`, [form.slug]);
 
   const toggleToken = (token: string) => {
@@ -156,7 +153,6 @@ const MyStacksSection = () => {
         <Button onClick={() => setShowCreate((v) => !v)}><Plus className="w-4 h-4 mr-1.5" />Create Payment Page</Button>
       </div>
 
-      {/* Green info banner — My Stacks only */}
       {!hasRealStacks && !showCreate && (
         <div className="rounded-xl border-l-4 border-green-500 bg-green-500/10 px-4 py-3 mb-4">
           <p className="text-sm text-green-400">We have provided a demo in each section to help new users navigate the app with ease 😊</p>
@@ -199,12 +195,11 @@ const MyStacksSection = () => {
         </div>
       )}
 
-
       <div className="space-y-4">
         {displayStacks.map((stack) => {
           const isDemo = !!stack.isDemo;
           return (
-            <div key={stack.id} className={`rounded-2xl border border-border bg-card p-6 relative overflow-hidden ${isDemo ? "opacity-60 pointer-events-auto" : ""}`} onClick={isDemo ? handleDemoClick : undefined}>
+            <div key={stack.id} className="rounded-2xl border border-border bg-card p-6 relative overflow-hidden" onClick={isDemo ? handleDemoClick : undefined}>
               <div className="absolute inset-0 bg-gradient-to-br from-primary/5 via-transparent to-accent/5 opacity-70" />
               <div className="relative z-10">
                 <div className="flex items-start justify-between mb-3">
