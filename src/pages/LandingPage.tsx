@@ -184,9 +184,9 @@ const LandingPage = () => {
                 className="flex items-center gap-2 px-4 py-2 rounded-xl border border-border/50 bg-card/50 glass text-sm"
               >
                 <span className="w-6 h-6 rounded-full gradient-primary flex items-center justify-center text-xs font-bold text-primary-foreground">
-                  {payment.name[0]}
+                  ✦
                 </span>
-                <span className="text-muted-foreground">{payment.name} received</span>
+                <span className="text-muted-foreground">A creator received</span>
                 <span className="font-semibold text-foreground">{payment.amount}</span>
                 <span className="text-xs text-muted-foreground/60">· {payment.time}</span>
               </motion.div>
