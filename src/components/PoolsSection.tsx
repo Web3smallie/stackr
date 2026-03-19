@@ -1,6 +1,7 @@
 import { useMemo, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Plus, UserPlus, Users, Vote, TrendingUp, X, BarChart3, Zap, Search, LogOut, Loader2 } from "lucide-react";
+import DemoBadge, { DemoNotice } from "@/components/DemoBadge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
@@ -42,25 +43,17 @@ interface DemoPool {
   my_share?: number;
   is_active: boolean;
   votes?: VoteItem[];
+  isDemo?: boolean;
 }
 
-const initialPools: DemoPool[] = [
-  {
-    id: "1", name: "Solana Alpha Fund", description: "Community-driven pool targeting high-potential Solana tokens",
-    total_value: 245.5, member_count: 12, token: "SOL", target_tokens: ["BAGS", "SOL"],
-    my_contribution: 15.2, my_share: 6.2, is_active: true,
-    votes: [
-      { id: "v1", token: "BAGS", votes_for: 8, votes_against: 2, total_voters: 12, voted: 10, status: "active", user_voted: null },
-      { id: "v2", token: "SOL", votes_for: 11, votes_against: 1, total_voters: 12, voted: 12, status: "passed", user_voted: "for" },
-    ],
-  },
-  {
-    id: "2", name: "Stablecoin Yield Pool", description: "Conservative pool focused on stablecoin yields",
-    total_value: 12500, member_count: 28, token: "USDC", target_tokens: ["USDC", "USDT"],
-    my_contribution: 500, my_share: 4, is_active: true,
-    votes: [{ id: "v3", token: "USDT", votes_for: 18, votes_against: 6, total_voters: 28, voted: 24, status: "active", user_voted: null }],
-  },
-];
+const demoPool: DemoPool = {
+  id: "demo-1", name: "Solana Alpha Fund", description: "Community-driven pool targeting high-potential Solana tokens",
+  total_value: 245.5, member_count: 12, token: "SOL", target_tokens: ["BAGS", "SOL"],
+  my_contribution: 15.2, my_share: 6.2, is_active: true, isDemo: true,
+  votes: [
+    { id: "v1", token: "BAGS", votes_for: 8, votes_against: 2, total_voters: 12, voted: 10, status: "active", user_voted: null },
+  ],
+};
 
 const browsePools: DemoPool[] = [
   { id: "4", name: "DeFi Explorers", description: "Exploring new DeFi protocols on Solana", total_value: 89.3, member_count: 7, token: "SOL", target_tokens: ["SOL", "BAGS"], is_active: true },
@@ -71,7 +64,7 @@ type ViewMode = "active" | "create" | "join" | "voting";
 
 const PoolsSection = () => {
   const [view, setView] = useState<ViewMode>("active");
-  const [pools, setPools] = useState<DemoPool[]>(initialPools);
+  const [pools, setPools] = useState<DemoPool[]>([]);
   const [selectedPoolId, setSelectedPoolId] = useState<string | null>(null);
   const [detailsPool, setDetailsPool] = useState<DemoPool | null>(null);
   const [joinAmounts, setJoinAmounts] = useState<Record<string, string>>({});
@@ -307,16 +300,25 @@ const PoolsSection = () => {
       {(view === "active" || view === "voting") && (
         <>
           <h3 className="font-display text-lg font-bold text-foreground mb-4 flex items-center gap-2"><BarChart3 className="w-5 h-5 text-primary" />My Active Pools</h3>
-          {filteredPools.length === 0 && (
+          {pools.length === 0 && <DemoNotice />}
+          {filteredPools.length === 0 && searchQuery && (
             <p className="text-sm text-muted-foreground text-center py-8">No pools found matching "{searchQuery}"</p>
           )}
           <div className="grid sm:grid-cols-2 gap-4">
-            {filteredPools.map((pool) => (
-              <motion.div key={pool.id} initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="rounded-2xl border border-border bg-card p-6 relative overflow-hidden">
+            {(pools.length > 0 ? filteredPools : [demoPool]).map((pool) => {
+              const isDemo = !!pool.isDemo;
+              return (
+              <motion.div key={pool.id} initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className={`rounded-2xl border border-border bg-card p-6 relative overflow-hidden ${isDemo ? "opacity-60" : ""}`}>
                 <div className="absolute inset-0 bg-gradient-to-br from-primary/5 via-transparent to-accent/5 opacity-70" />
                 <div className="relative z-10">
                   <div className="flex items-start justify-between mb-3">
-                    <div><h4 className="font-display text-base font-bold text-foreground">{pool.name}</h4><p className="text-xs text-muted-foreground mt-0.5">{pool.description}</p></div>
+                    <div>
+                      <div className="flex items-center gap-2">
+                        <h4 className="font-display text-base font-bold text-foreground">{pool.name}</h4>
+                        {isDemo && <DemoBadge />}
+                      </div>
+                      <p className="text-xs text-muted-foreground mt-0.5">{pool.description}</p>
+                    </div>
                     <Badge variant="outline" className={`text-xs border ${tokenColors[pool.token]}`}>{pool.token}</Badge>
                   </div>
                   <div className="grid grid-cols-2 gap-3 mb-4">
@@ -326,20 +328,17 @@ const PoolsSection = () => {
                     <div className="rounded-xl bg-secondary p-3"><p className="text-[10px] text-muted-foreground uppercase tracking-wider">Members</p><p className="text-sm font-bold text-foreground flex items-center gap-1"><Users className="w-3 h-3 text-muted-foreground" />{pool.member_count}</p></div>
                   </div>
                   <div className="flex flex-wrap gap-2 mb-4">{pool.target_tokens.map((token) => <Badge key={token} variant="outline" className={`text-[10px] border ${tokenColors[token]}`}>{token}</Badge>)}</div>
-                  <div className="flex gap-2">
-                    <Button size="sm" className="flex-1" onClick={() => { setSelectedPoolId(pool.id); setView("voting"); }}><Vote className="w-4 h-4 mr-1" />Vote</Button>
-                    <Button size="sm" className="flex-1" onClick={() => setDetailsPool(pool)}><TrendingUp className="w-4 h-4 mr-1" />Details</Button>
-                    <button
-                      type="button"
-                      onClick={() => setConfirmLeaveId(pool.id)}
-                      className="inline-flex items-center justify-center gap-1 rounded-lg px-3 py-1.5 text-xs font-medium bg-destructive text-destructive-foreground hover:bg-destructive/90 transition-colors"
-                    >
-                      <LogOut className="w-3 h-3" />Leave
-                    </button>
-                  </div>
+                  {!isDemo && (
+                    <div className="flex gap-2">
+                      <Button size="sm" className="flex-1" onClick={() => { setSelectedPoolId(pool.id); setView("voting"); }}><Vote className="w-4 h-4 mr-1" />Vote</Button>
+                      <Button size="sm" className="flex-1" onClick={() => setDetailsPool(pool)}><TrendingUp className="w-4 h-4 mr-1" />Details</Button>
+                      <button type="button" onClick={() => setConfirmLeaveId(pool.id)} className="inline-flex items-center justify-center gap-1 rounded-lg px-3 py-1.5 text-xs font-medium bg-destructive text-destructive-foreground hover:bg-destructive/90 transition-colors"><LogOut className="w-3 h-3" />Leave</button>
+                    </div>
+                  )}
                 </div>
               </motion.div>
-            ))}
+              );
+            })}
           </div>
         </>
       )}

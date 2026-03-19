@@ -1,0 +1,1 @@
+CREATE UNIQUE INDEX IF NOT EXISTS payment_pages_slug_unique ON public.payment_pages (slug);

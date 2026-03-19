@@ -57,47 +57,20 @@ const sidebarLinks = [
   { icon: Settings, label: "Settings", section: "settings" },
 ];
 
-const demoVaults = [
-  {
-    vault_name: "New MacBook Pro",
-    vault_purpose: "For coding & design work",
-    vault_target: 10,
-    vault_target_token: "SOL" as const,
-    current_amount: 7.3,
-    vault_progress_percentage: 73,
-    vault_notes: "Almost there, just a few more tips!",
-    unlock_date: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString(),
-    is_locked: true,
-    is_completed: false,
-    allow_contributions: true,
-  },
-  {
-    vault_name: "Emergency Fund",
-    vault_purpose: "Safety net savings",
-    vault_target: 500,
-    vault_target_token: "USDC" as const,
-    current_amount: 125,
-    vault_progress_percentage: 25,
-    vault_notes: null,
-    unlock_date: new Date(Date.now() + 180 * 24 * 60 * 60 * 1000).toISOString(),
-    is_locked: true,
-    is_completed: false,
-    allow_contributions: false,
-  },
-  {
-    vault_name: "Holiday Trip",
-    vault_purpose: "Bali 2026 🌴",
-    vault_target: 2000,
-    vault_target_token: "USDT" as const,
-    current_amount: 1850,
-    vault_progress_percentage: 92.5,
-    vault_notes: "So close to the beach!",
-    unlock_date: new Date(Date.now() + 14 * 24 * 60 * 60 * 1000).toISOString(),
-    is_locked: true,
-    is_completed: false,
-    allow_contributions: true,
-  },
-];
+const demoVault = {
+  vault_name: "New MacBook Pro",
+  vault_purpose: "For coding & design work",
+  vault_target: 10,
+  vault_target_token: "SOL" as const,
+  current_amount: 7.3,
+  vault_progress_percentage: 73,
+  vault_notes: "Almost there, just a few more tips!",
+  unlock_date: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString(),
+  is_locked: true,
+  is_completed: false,
+  allow_contributions: true,
+  isDemo: true,
+};
 
 const container = {
   hidden: { opacity: 0 },
@@ -442,10 +415,17 @@ const Dashboard = () => {
                   </div>
                   <Button onClick={() => setShowCreateVault(true)}><Plus className="w-4 h-4 mr-1.5" />New Vault</Button>
                 </div>
+                {/* Demo notice when no real vaults */}
+                <div className="rounded-xl border border-amber-500/20 bg-amber-500/5 px-4 py-2.5 mb-4">
+                  <p className="text-xs text-amber-400/80">This is a demo — create your own to get started!</p>
+                </div>
                 <div className="grid sm:grid-cols-2 gap-4">
-                  {demoVaults.map((vault, i) => (
-                    <VaultCard key={i} vault={vault} />
-                  ))}
+                  <div className="opacity-60 relative">
+                    <div className="absolute top-3 right-3 z-20">
+                      <span className="inline-flex items-center rounded-full bg-amber-500/20 text-amber-400 border border-amber-500/40 text-[10px] uppercase tracking-wider font-bold px-2 py-0.5">Demo</span>
+                    </div>
+                    <VaultCard vault={demoVault} />
+                  </div>
                 </div>
               </motion.div>
             )}
