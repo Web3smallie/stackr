@@ -45,23 +45,14 @@ interface DemoPool {
   votes?: VoteItem[];
 }
 
-const initialPools: DemoPool[] = [
-  {
-    id: "1", name: "Solana Alpha Fund", description: "Community-driven pool targeting high-potential Solana tokens",
-    total_value: 245.5, member_count: 12, token: "SOL", target_tokens: ["BAGS", "SOL"],
-    my_contribution: 15.2, my_share: 6.2, is_active: true,
-    votes: [
-      { id: "v1", token: "BAGS", votes_for: 8, votes_against: 2, total_voters: 12, voted: 10, status: "active", user_voted: null },
-      { id: "v2", token: "SOL", votes_for: 11, votes_against: 1, total_voters: 12, voted: 12, status: "passed", user_voted: "for" },
-    ],
-  },
-  {
-    id: "2", name: "Stablecoin Yield Pool", description: "Conservative pool focused on stablecoin yields",
-    total_value: 12500, member_count: 28, token: "USDC", target_tokens: ["USDC", "USDT"],
-    my_contribution: 500, my_share: 4, is_active: true,
-    votes: [{ id: "v3", token: "USDT", votes_for: 18, votes_against: 6, total_voters: 28, voted: 24, status: "active", user_voted: null }],
-  },
-];
+const demoPool: DemoPool = {
+  id: "demo-1", name: "Solana Alpha Fund", description: "Community-driven pool targeting high-potential Solana tokens",
+  total_value: 245.5, member_count: 12, token: "SOL", target_tokens: ["BAGS", "SOL"],
+  my_contribution: 15.2, my_share: 6.2, is_active: true, isDemo: true,
+  votes: [
+    { id: "v1", token: "BAGS", votes_for: 8, votes_against: 2, total_voters: 12, voted: 10, status: "active", user_voted: null },
+  ],
+};
 
 const browsePools: DemoPool[] = [
   { id: "4", name: "DeFi Explorers", description: "Exploring new DeFi protocols on Solana", total_value: 89.3, member_count: 7, token: "SOL", target_tokens: ["SOL", "BAGS"], is_active: true },
