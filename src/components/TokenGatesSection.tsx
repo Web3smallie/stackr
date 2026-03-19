@@ -1,9 +1,12 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { motion } from "framer-motion";
 import { Lock, Plus, Unlock, FileText, Link2, Video, Eye } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
+import { useAuth } from "@/contexts/AuthContext";
+import { supabase } from "@/integrations/supabase/client";
+import { emitStackrDataChanged } from "@/lib/dataSync";
 import { toast } from "@/hooks/use-toast";
 import DemoBadge from "@/components/DemoBadge";
 
@@ -17,28 +20,100 @@ const allTokens = ["SOL", "USDC", "USDT", "BAGS"] as const;
 const contentTypes = [{ value: "text", label: "Text", icon: FileText }, { value: "link", label: "Link", icon: Link2 }, { value: "video", label: "Video", icon: Video }];
 
 interface Gate {
-  id: string; title: string; content_type: string; required_amount: number; token: string; unlocks: number; content: string; isDemo?: boolean;
+  id: string;
+  title: string;
+  content_type: string;
+  required_amount: number;
+  token: string;
+  unlocks: number;
+  content: string;
+  isDemo?: boolean;
 }
 
 const demoGate: Gate = { id: "demo-1", title: "Exclusive Merch Link", content_type: "link", required_amount: 5, token: "SOL", unlocks: 12, content: "https://stackr.app/secret", isDemo: true };
 
 const TokenGatesSection = () => {
+  const { user } = useAuth();
   const [showCreate, setShowCreate] = useState(false);
   const [gates, setGates] = useState<Gate[]>([]);
   const [activeGate, setActiveGate] = useState<Gate | null>(null);
   const [unlocking, setUnlocking] = useState(false);
+  const [creating, setCreating] = useState(false);
   const [form, setForm] = useState({ title: "", content: "", content_type: "text", required_amount: "", token: "SOL", videoFileName: "" });
+
+  useEffect(() => {
+    const fetchGates = async () => {
+      if (!user) {
+        setGates([]);
+        return;
+      }
+
+      const { data } = await supabase
+        .from("token_gates")
+        .select("*")
+        .eq("user_id", user.id)
+        .order("created_at", { ascending: false });
+
+      setGates(
+        (data ?? []).map((gate) => ({
+          id: gate.id,
+          title: gate.title,
+          content_type: gate.content_type,
+          required_amount: Number(gate.required_amount),
+          token: gate.token,
+          unlocks: 0,
+          content: gate.content ?? "",
+        })),
+      );
+    };
+
+    void fetchGates();
+  }, [user]);
 
   const hasReal = gates.length > 0;
   const displayGates = hasReal ? gates : [demoGate];
 
-  const createGate = () => {
+  const createGate = async () => {
     if (!form.title || !form.required_amount) {
       toast({ title: "Missing fields", variant: "destructive" });
       return;
     }
-    const newGate: Gate = { id: crypto.randomUUID(), title: form.title, content_type: form.content_type, required_amount: Number(form.required_amount), token: form.token, unlocks: 0, content: form.content };
-    setGates((prev) => [...prev, newGate]);
+
+    if (!user) {
+      toast({ title: "Wallet required", description: "Connect your wallet to create a gate.", variant: "destructive" });
+      return;
+    }
+
+    setCreating(true);
+    const { data, error } = await supabase
+      .from("token_gates")
+      .insert({
+        user_id: user.id,
+        title: form.title,
+        content: form.content || form.videoFileName || null,
+        content_type: form.content_type as any,
+        required_amount: Number(form.required_amount),
+        token: form.token as any,
+      })
+      .select()
+      .single();
+    setCreating(false);
+
+    if (error) {
+      toast({ title: "Could not create gate", description: error.message, variant: "destructive" });
+      return;
+    }
+
+    setGates((prev) => [{
+      id: data.id,
+      title: data.title,
+      content_type: data.content_type,
+      required_amount: Number(data.required_amount),
+      token: data.token,
+      unlocks: 0,
+      content: data.content ?? "",
+    }, ...prev]);
+    emitStackrDataChanged();
     toast({ title: "Gate created!", description: `${form.title} is now locked.` });
     setShowCreate(false);
     setForm({ title: "", content: "", content_type: "text", required_amount: "", token: "SOL", videoFileName: "" });
@@ -80,8 +155,6 @@ const TokenGatesSection = () => {
         <Button onClick={() => setShowCreate((v) => !v)}><Plus className="w-4 h-4 mr-1.5" />Create Gate</Button>
       </div>
 
-      
-
       {showCreate && (
         <div className="rounded-2xl border border-primary/30 bg-card p-6 mb-6 relative overflow-hidden">
           <div className="absolute inset-0 bg-gradient-to-br from-primary/5 via-transparent to-accent/5" />
@@ -98,7 +171,7 @@ const TokenGatesSection = () => {
             <div className="grid grid-cols-4 gap-2 mb-5">
               {allTokens.map((token) => <button key={token} type="button" onClick={() => setForm({ ...form, token })} className={`rounded-lg px-2 py-2 text-xs font-semibold border ${form.token === token ? "border-primary/60 bg-primary text-primary-foreground" : "border-border bg-secondary text-muted-foreground"}`}>{token}</button>)}
             </div>
-            <Button className="w-full" onClick={createGate}>Create Gate</Button>
+            <Button className="w-full" onClick={createGate} disabled={creating}>{creating ? "Creating..." : "Create Gate"}</Button>
           </div>
         </div>
       )}
@@ -108,7 +181,7 @@ const TokenGatesSection = () => {
           const TypeIcon = contentTypes.find((item) => item.value === gate.content_type)?.icon || FileText;
           const isDemo = !!gate.isDemo;
           return (
-            <div key={gate.id} className={`rounded-2xl border border-border bg-card p-6 relative overflow-hidden ${isDemo ? "opacity-60" : ""}`} onClick={isDemo ? handleDemoClick : undefined}>
+            <div key={gate.id} className="rounded-2xl border border-border bg-card p-6 relative overflow-hidden" onClick={isDemo ? handleDemoClick : undefined}>
               <div className="absolute inset-0 bg-gradient-to-br from-primary/5 via-transparent to-accent/5 opacity-70" />
               <div className="relative z-10">
                 <div className="flex items-start justify-between mb-3">

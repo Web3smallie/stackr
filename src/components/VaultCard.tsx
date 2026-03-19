@@ -5,9 +5,15 @@ import { Progress } from "@/components/ui/progress";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import DemoBadge from "@/components/DemoBadge";
+import { useAuth } from "@/contexts/AuthContext";
+import { supabase } from "@/integrations/supabase/client";
+import { emitStackrDataChanged } from "@/lib/dataSync";
 import { toast } from "@/hooks/use-toast";
 
 interface VaultProps {
+  id?: string;
+  user_id?: string;
   vault_name: string;
   vault_purpose: string | null;
   vault_target: number;
@@ -19,6 +25,7 @@ interface VaultProps {
   is_locked: boolean;
   is_completed: boolean;
   allow_contributions: boolean;
+  isDemo?: boolean;
 }
 
 const tokenColors: Record<string, string> = {
@@ -43,8 +50,9 @@ function getMotivation(pct: number): string | null {
 
 const depositTokens = ["SOL", "USDC", "USDT", "BAGS"] as const;
 
-const VaultCard = ({ vault }: { vault: VaultProps }) => {
-  const pct = vault.vault_progress_percentage;
+const VaultCard = ({ vault, onDepositSuccess }: { vault: VaultProps; onDepositSuccess?: (vault: VaultProps) => void }) => {
+  const { user } = useAuth();
+  const pct = vault.vault_progress_percentage ?? Math.round((vault.current_amount / Math.max(vault.vault_target, 1)) * 100);
   const daysLeft = getDaysUntil(vault.unlock_date);
   const motivation = getMotivation(pct);
   const tokenClass = tokenColors[vault.vault_target_token] || tokenColors.SOL;
@@ -52,18 +60,83 @@ const VaultCard = ({ vault }: { vault: VaultProps }) => {
   const [showDeposit, setShowDeposit] = useState(false);
   const [depositAmount, setDepositAmount] = useState("");
   const [depositToken, setDepositToken] = useState<typeof depositTokens[number]>(vault.vault_target_token);
+  const [depositing, setDepositing] = useState(false);
 
-  const confirmDeposit = () => {
+  const handleDemoClick = () => {
+    toast({ title: "This is a demo", description: "Create your own to get started!" });
+  };
+
+  const confirmDeposit = async () => {
+    if (vault.isDemo) {
+      handleDemoClick();
+      return;
+    }
+
     if (!depositAmount || Number(depositAmount) <= 0) {
       toast({ title: "Enter a valid amount", variant: "destructive" });
       return;
     }
+
+    if (!user || !vault.id) {
+      toast({ title: "Wallet required", description: "Connect your wallet to make a deposit.", variant: "destructive" });
+      return;
+    }
+
+    setDepositing(true);
+
+    const amount = Number(depositAmount);
+    const updatedAmount = Number(vault.current_amount) + amount;
+    const updatedProgress = Math.min(100, Math.round((updatedAmount / Math.max(vault.vault_target, 1)) * 100));
+    const updatedVault: VaultProps = {
+      ...vault,
+      current_amount: updatedAmount,
+      vault_progress_percentage: updatedProgress,
+      is_completed: updatedAmount >= vault.vault_target,
+    };
+
+    const { error: depositError } = await supabase.from("vault_deposits").insert({
+      amount,
+      token: depositToken as any,
+      from_wallet: user.wallet_address,
+      vault_id: vault.id,
+      transaction_signature: null,
+    });
+
+    if (depositError) {
+      setDepositing(false);
+      toast({ title: "Could not save deposit", description: depositError.message, variant: "destructive" });
+      return;
+    }
+
+    const { error: vaultError } = await supabase
+      .from("vaults")
+      .update({
+        current_amount: updatedVault.current_amount,
+        vault_progress_percentage: updatedVault.vault_progress_percentage,
+        is_completed: updatedVault.is_completed,
+      })
+      .eq("id", vault.id);
+
+    setDepositing(false);
+
+    if (vaultError) {
+      toast({ title: "Deposit saved but vault total failed to update", description: vaultError.message, variant: "destructive" });
+      return;
+    }
+
     toast({ title: "Deposit confirmed", description: `${depositAmount} ${depositToken} deposited into ${vault.vault_name}` });
     setShowDeposit(false);
     setDepositAmount("");
+    onDepositSuccess?.(updatedVault);
+    emitStackrDataChanged();
   };
 
   const shareVault = () => {
+    if (vault.isDemo) {
+      handleDemoClick();
+      return;
+    }
+
     const shareText = `Support my vault \"${vault.vault_name}\" on Stackr`;
     navigator.clipboard.writeText(shareText);
     toast({ title: "Vault link copied", description: "Share text copied to clipboard." });
@@ -71,7 +144,7 @@ const VaultCard = ({ vault }: { vault: VaultProps }) => {
 
   return (
     <>
-      {showDeposit && (
+      {showDeposit && !vault.isDemo && (
         <div className="fixed inset-0 z-40 flex items-center justify-center bg-background/80 backdrop-blur-sm p-4">
           <div className="w-full max-w-md rounded-3xl border border-primary/30 bg-card p-6 shadow-[0_0_40px_hsl(var(--primary)/0.2)]">
             <h4 className="font-display text-xl font-bold text-foreground mb-1">Deposit into {vault.vault_name}</h4>
@@ -99,7 +172,7 @@ const VaultCard = ({ vault }: { vault: VaultProps }) => {
               </div>
               <div className="flex gap-2">
                 <Button variant="ghost" className="flex-1" onClick={() => setShowDeposit(false)}>Cancel</Button>
-                <Button className="flex-1" onClick={confirmDeposit}>Confirm Deposit</Button>
+                <Button className="flex-1" onClick={confirmDeposit} disabled={depositing}>{depositing ? "Saving..." : "Confirm Deposit"}</Button>
               </div>
             </div>
           </div>
@@ -110,6 +183,7 @@ const VaultCard = ({ vault }: { vault: VaultProps }) => {
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
         className="rounded-2xl border border-border bg-card p-6 hover:border-primary/40 transition-all duration-300 group relative overflow-hidden"
+        onClick={vault.isDemo ? handleDemoClick : undefined}
       >
         <div className="absolute inset-0 bg-gradient-to-br from-primary/5 via-transparent to-accent/5 opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
 
@@ -120,7 +194,10 @@ const VaultCard = ({ vault }: { vault: VaultProps }) => {
                 {vault.is_locked ? <Lock className="w-5 h-5 text-primary" /> : <Unlock className="w-5 h-5 text-success" />}
               </div>
               <div>
-                <h3 className="font-display text-lg font-bold text-foreground">{vault.vault_name}</h3>
+                <div className="flex items-center gap-2">
+                  <h3 className="font-display text-lg font-bold text-foreground">{vault.vault_name}</h3>
+                  {vault.isDemo && <DemoBadge />}
+                </div>
                 {vault.vault_purpose && <p className="text-xs text-muted-foreground">{vault.vault_purpose}</p>}
               </div>
             </div>
@@ -173,13 +250,15 @@ const VaultCard = ({ vault }: { vault: VaultProps }) => {
 
           {vault.vault_notes && <p className="text-xs text-muted-foreground italic mb-4">"{vault.vault_notes}"</p>}
 
-          <div className="flex gap-2">
-            <Button size="sm" className="flex-1" disabled={!vault.is_locked} onClick={() => setShowDeposit(true)}>
-              <Wallet className="w-4 h-4 mr-1" />
-              Deposit
-            </Button>
-            <Button size="sm" className="flex-1" onClick={shareVault}>Share Vault</Button>
-          </div>
+          {!vault.isDemo && (
+            <div className="flex gap-2">
+              <Button size="sm" className="flex-1" disabled={!vault.is_locked} onClick={() => setShowDeposit(true)}>
+                <Wallet className="w-4 h-4 mr-1" />
+                Deposit
+              </Button>
+              <Button size="sm" className="flex-1" onClick={shareVault}>Share Vault</Button>
+            </div>
+          )}
         </div>
       </motion.div>
     </>

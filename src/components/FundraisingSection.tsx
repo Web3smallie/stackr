@@ -1,10 +1,13 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { motion } from "framer-motion";
 import { Target, Plus, Users, Clock, TrendingUp } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
+import { useAuth } from "@/contexts/AuthContext";
+import { supabase } from "@/integrations/supabase/client";
+import { emitStackrDataChanged } from "@/lib/dataSync";
 import { toast } from "@/hooks/use-toast";
 import DemoBadge from "@/components/DemoBadge";
 
@@ -22,32 +25,108 @@ const item = {
 };
 
 interface Goal {
-  id: string; title: string; description: string; target_amount: number; current_amount: number; token: string; deadline: string; collaborators: string[]; isDemo?: boolean;
+  id: string;
+  title: string;
+  description: string;
+  target_amount: number;
+  current_amount: number;
+  token: string;
+  deadline: string;
+  collaborators: string[];
+  isDemo?: boolean;
 }
 
 const demoGoal: Goal = { id: "demo-1", title: "Studio Equipment", description: "Need new recording gear for the album", target_amount: 50, current_amount: 32.5, token: "SOL", deadline: "2026-05-01", collaborators: ["7xKX...3sU"], isDemo: true };
 
 const FundraisingSection = () => {
+  const { user } = useAuth();
   const [showCreate, setShowCreate] = useState(false);
   const [goals, setGoals] = useState<Goal[]>([]);
   const [showContributeGoal, setShowContributeGoal] = useState<Goal | null>(null);
   const [form, setForm] = useState({ title: "", description: "", target_amount: "", token: "SOL", deadline: "", collaborators: "" });
   const [contributionAmount, setContributionAmount] = useState("");
   const [contributionToken, setContributionToken] = useState("SOL");
+  const [creating, setCreating] = useState(false);
+
+  useEffect(() => {
+    const fetchGoals = async () => {
+      if (!user) {
+        setGoals([]);
+        return;
+      }
+
+      const { data } = await supabase
+        .from("fundraising_goals")
+        .select("*")
+        .eq("user_id", user.id)
+        .order("created_at", { ascending: false });
+
+      setGoals(
+        (data ?? []).map((goal) => ({
+          id: goal.id,
+          title: goal.title,
+          description: goal.description ?? "",
+          target_amount: Number(goal.target_amount),
+          current_amount: Number(goal.current_amount),
+          token: goal.token,
+          deadline: goal.deadline ?? "",
+          collaborators: goal.collaborators ?? [],
+        })),
+      );
+    };
+
+    void fetchGoals();
+  }, [user]);
 
   const hasReal = goals.length > 0;
   const displayGoals = hasReal ? goals : [demoGoal];
 
-  const submitGoal = () => {
+  const submitGoal = async () => {
     if (!form.title || !form.target_amount) {
       toast({ title: "Missing fields", description: "Add title and target amount.", variant: "destructive" });
       return;
     }
+
+    if (!user) {
+      toast({ title: "Wallet required", description: "Connect your wallet to create a goal.", variant: "destructive" });
+      return;
+    }
+
+    setCreating(true);
+    const { data, error } = await supabase
+      .from("fundraising_goals")
+      .insert({
+        user_id: user.id,
+        title: form.title,
+        description: form.description || null,
+        target_amount: Number(form.target_amount),
+        current_amount: 0,
+        token: form.token as any,
+        deadline: form.deadline || null,
+        collaborators: form.collaborators ? form.collaborators.split(",").map((value) => value.trim()).filter(Boolean) : [],
+      })
+      .select()
+      .single();
+    setCreating(false);
+
+    if (error) {
+      toast({ title: "Could not create goal", description: error.message, variant: "destructive" });
+      return;
+    }
+
     const newGoal: Goal = {
-      id: crypto.randomUUID(), title: form.title, description: form.description, target_amount: Number(form.target_amount),
-      current_amount: 0, token: form.token, deadline: form.deadline, collaborators: form.collaborators ? form.collaborators.split(",").map(s => s.trim()) : [],
+      id: data.id,
+      title: data.title,
+      description: data.description ?? "",
+      target_amount: Number(data.target_amount),
+      current_amount: Number(data.current_amount),
+      token: data.token,
+      deadline: data.deadline ?? "",
+      collaborators: data.collaborators ?? [],
     };
-    setGoals((prev) => [...prev, newGoal]);
+
+    setGoals((prev) => [newGoal, ...prev]);
+    emitStackrDataChanged();
     toast({ title: "Goal created!", description: `${form.title} is now live.` });
     setShowCreate(false);
     setForm({ title: "", description: "", target_amount: "", token: "SOL", deadline: "", collaborators: "" });
@@ -94,8 +173,6 @@ const FundraisingSection = () => {
         <Button onClick={() => setShowCreate((v) => !v)}><Plus className="w-4 h-4 mr-1.5" />Create Goal</Button>
       </motion.div>
 
-      
-
       {showCreate && (
         <motion.div variants={item} className="rounded-2xl border border-primary/30 bg-card p-6 mb-6 relative overflow-hidden">
           <div className="absolute inset-0 bg-gradient-to-br from-primary/5 via-transparent to-accent/5" />
@@ -117,7 +194,7 @@ const FundraisingSection = () => {
             </div>
             <div className="flex gap-2">
               <Button variant="ghost" className="flex-1" onClick={() => setShowCreate(false)}>Cancel</Button>
-              <Button className="flex-1" onClick={submitGoal}>Create Goal</Button>
+              <Button className="flex-1" onClick={submitGoal} disabled={creating}>{creating ? "Creating..." : "Create Goal"}</Button>
             </div>
           </div>
         </motion.div>
@@ -125,11 +202,11 @@ const FundraisingSection = () => {
 
       <div className="grid sm:grid-cols-2 gap-4">
         {displayGoals.map((goal) => {
-          const pct = Math.round((goal.current_amount / goal.target_amount) * 100);
-          const daysLeft = Math.max(0, Math.ceil((new Date(goal.deadline).getTime() - Date.now()) / (1000 * 60 * 60 * 24)));
+          const pct = Math.round((goal.current_amount / Math.max(goal.target_amount, 1)) * 100);
+          const daysLeft = goal.deadline ? Math.max(0, Math.ceil((new Date(goal.deadline).getTime() - Date.now()) / (1000 * 60 * 60 * 24))) : 0;
           const isDemo = !!goal.isDemo;
           return (
-            <motion.div key={goal.id} variants={item} className={`rounded-2xl border border-border bg-card p-6 hover:border-primary/40 transition-all group relative overflow-hidden ${isDemo ? "opacity-60" : ""}`} onClick={isDemo ? handleDemoClick : undefined}>
+            <motion.div key={goal.id} variants={item} className="rounded-2xl border border-border bg-card p-6 hover:border-primary/40 transition-all group relative overflow-hidden" onClick={isDemo ? handleDemoClick : undefined}>
               <div className="absolute inset-0 bg-gradient-to-br from-primary/5 via-transparent to-accent/5 opacity-0 group-hover:opacity-100 transition-opacity" />
               <div className="relative z-10">
                 <div className="flex items-start justify-between mb-3">
