@@ -14,6 +14,7 @@ import {
   Eye,
   EyeOff,
   Lock,
+  Users,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useState } from "react";
@@ -24,6 +25,7 @@ import { useWalletModal } from "@solana/wallet-adapter-react-ui";
 import WalletButton from "@/components/WalletButton";
 import VaultCard from "@/components/VaultCard";
 import OnboardingModal from "@/components/OnboardingModal";
+import PoolsSection from "@/components/PoolsSection";
 import { Switch } from "@/components/ui/switch";
 import { supabase } from "@/integrations/supabase/client";
 
@@ -31,6 +33,7 @@ const sidebarLinks = [
   { icon: LayoutDashboard, label: "Dashboard", section: "dashboard" },
   { icon: Link2, label: "My Stacks", section: "stacks" },
   { icon: Vault, label: "My Vaults", section: "vaults" },
+  { icon: Users, label: "My Pools", section: "pools" },
   { icon: ArrowDownUp, label: "Transactions", section: "transactions" },
   { icon: Shield, label: "Privacy", section: "privacy" },
   { icon: Settings, label: "Settings", section: "settings" },
