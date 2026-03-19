@@ -110,7 +110,21 @@ const LandingPage = () => {
       <header className="fixed top-0 left-0 right-0 z-50 glass">
         <div className="max-w-6xl mx-auto px-6 h-16 flex items-center justify-between">
           <div className="flex items-center gap-2">
-            <Sparkles className="w-5 h-5 text-accent" />
+            <div className="relative w-7 h-7 flex items-center justify-center">
+              <svg viewBox="0 0 32 32" className="w-7 h-7" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <defs>
+                  <linearGradient id="sGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+                    <stop offset="0%" stopColor="hsl(var(--primary))" />
+                    <stop offset="100%" stopColor="hsl(var(--accent))" />
+                  </linearGradient>
+                </defs>
+                <path d="M10 6h12a2 2 0 0 1 2 2v1a2 2 0 0 1-2 2H10a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2z" fill="url(#sGrad)" opacity="0.4"/>
+                <path d="M10 13h12a2 2 0 0 1 2 2v1a2 2 0 0 1-2 2H10a2 2 0 0 1-2-2v-1a2 2 0 0 1 2-2z" fill="url(#sGrad)" opacity="0.65"/>
+                <path d="M10 20h12a2 2 0 0 1 2 2v1a2 2 0 0 1-2 2H10a2 2 0 0 1-2-2v-1a2 2 0 0 1 2-2z" fill="url(#sGrad)" opacity="0.9"/>
+                <text x="16" y="21" textAnchor="middle" fontSize="16" fontWeight="800" fill="white" fontFamily="system-ui">S</text>
+              </svg>
+              <div className="absolute inset-0 rounded-md bg-primary/20 blur-md -z-10" />
+            </div>
             <span className="font-display text-xl font-bold text-foreground">STACKR</span>
           </div>
           <div className="flex items-center gap-3">
