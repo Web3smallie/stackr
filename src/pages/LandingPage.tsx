@@ -9,8 +9,14 @@ import {
   BarChart3,
   RefreshCw,
   Wallet,
+  ShieldCheck,
+  Vault,
+  Users,
+  CreditCard,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
+import { useNavigate } from "react-router-dom";
 import { useNavigate } from "react-router-dom";
 import Footer from "@/components/Footer";
 
