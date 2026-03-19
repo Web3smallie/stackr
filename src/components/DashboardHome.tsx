@@ -1,11 +1,19 @@
 import { motion } from "framer-motion";
-import { 
-  TrendingUp, Vault, Users, ArrowDownUp, Plus, Link2, UserPlus,
-  Award, Sparkles
+import {
+  TrendingUp,
+  Vault,
+  Users,
+  ArrowDownUp,
+  Plus,
+  Link2,
+  UserPlus,
+  Sparkles,
+  ArrowRight,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useAuth, truncateWallet } from "@/contexts/AuthContext";
 import { useWallet } from "@solana/wallet-adapter-react";
+import { Badge } from "@/components/ui/badge";
 
 const item = {
   hidden: { opacity: 0, y: 10 },
@@ -13,15 +21,21 @@ const item = {
 };
 
 const getScoreTier = (score: number) => {
-  if (score >= 751) return { label: "Diamond", color: "from-cyan-400 to-blue-500", icon: "💎" };
-  if (score >= 501) return { label: "Gold", color: "from-yellow-400 to-amber-500", icon: "🥇" };
-  if (score >= 251) return { label: "Silver", color: "from-gray-300 to-gray-400", icon: "🥈" };
-  return { label: "Bronze", color: "from-orange-400 to-orange-600", icon: "🥉" };
+  if (score >= 751) return { label: "Diamond", glow: "shadow-[0_0_22px_hsl(var(--accent)/0.35)]" };
+  if (score >= 501) return { label: "Gold", glow: "shadow-[0_0_20px_hsl(var(--primary)/0.28)]" };
+  if (score >= 251) return { label: "Silver", glow: "shadow-[0_0_16px_hsl(var(--primary)/0.2)]" };
+  return { label: "Bronze", glow: "shadow-[0_0_14px_hsl(var(--primary)/0.14)]" };
 };
 
 interface Props {
   onNavigate: (section: string) => void;
 }
+
+const recentTransactions = [
+  { type: "Payment Received", amount: "2.5 SOL", from: "7xKX...3sU", time: "2 hours ago" },
+  { type: "Vault Deposit", amount: "100 USDC", from: "Self", time: "Yesterday" },
+  { type: "Pool Contribution", amount: "5 SOL", from: "Self", time: "3 days ago" },
+];
 
 const DashboardHome = ({ onNavigate }: Props) => {
   const { user } = useAuth();
@@ -36,78 +50,53 @@ const DashboardHome = ({ onNavigate }: Props) => {
 
   return (
     <>
-      {/* Welcome */}
-      <motion.div variants={item} className="mb-6">
-        <p className="text-sm text-muted-foreground mb-1">Welcome back,</p>
-        <h1 className="font-display text-3xl font-bold text-foreground">{displayName}</h1>
-      </motion.div>
-
-      {/* Stackr Score Badge */}
-      <motion.div variants={item} className="mb-6">
-        <div className="inline-flex items-center gap-3 px-4 py-2 rounded-xl border border-border bg-card">
-          <span className="text-lg">{tier.icon}</span>
+      <motion.div variants={item} className="mb-8 rounded-3xl border border-primary/25 bg-card p-6 md:p-8 relative overflow-hidden shadow-[0_0_40px_hsl(var(--primary)/0.12)]">
+        <div className="absolute inset-0 bg-[radial-gradient(circle_at_top_right,hsl(var(--accent)/0.18),transparent_35%),radial-gradient(circle_at_bottom_left,hsl(var(--primary)/0.15),transparent_30%)]" />
+        <div className="relative z-10 flex flex-col gap-6 lg:flex-row lg:items-end lg:justify-between">
           <div>
-            <p className="text-[10px] text-muted-foreground uppercase tracking-wider">Stackr Score</p>
-            <p className="text-sm font-bold text-foreground">{score} <span className="text-xs text-muted-foreground">/ 1000</span></p>
+            <p className="text-xs uppercase tracking-[0.24em] text-muted-foreground mb-2">Welcome back</p>
+            <h1 className="font-display text-3xl md:text-4xl font-bold text-foreground">{displayName}</h1>
+            <p className="text-sm text-muted-foreground mt-3 max-w-xl">
+              Your creator cockpit is live — payments, vaults, pools and private unlocks all in one place.
+            </p>
           </div>
-          <span className={`px-2 py-0.5 rounded-full text-[10px] font-bold bg-gradient-to-r ${tier.color} text-background`}>
-            {tier.label}
-          </span>
+          <div className={`rounded-2xl border border-primary/30 bg-secondary/70 px-4 py-3 ${tier.glow}`}>
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 rounded-2xl gradient-primary flex items-center justify-center">
+                <Sparkles className="w-5 h-5 text-primary-foreground" />
+              </div>
+              <div>
+                <p className="text-[10px] uppercase tracking-[0.24em] text-muted-foreground">Stackr Score</p>
+                <div className="flex items-center gap-2">
+                  <span className="text-lg font-bold text-foreground">{score}</span>
+                  <Badge className="bg-primary text-primary-foreground border-transparent">{tier.label}</Badge>
+                </div>
+              </div>
+            </div>
+          </div>
         </div>
       </motion.div>
 
-      {/* Stats Grid */}
       <motion.div variants={item} className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
-        <div className="rounded-2xl border border-border bg-card p-5 hover:border-primary/40 transition-all group relative overflow-hidden">
-          <div className="absolute inset-0 bg-gradient-to-br from-primary/5 via-transparent to-accent/5 opacity-0 group-hover:opacity-100 transition-opacity" />
-          <div className="relative z-10">
-            <div className="flex items-center gap-2 mb-2">
-              <TrendingUp className="w-4 h-4 text-primary" />
-              <span className="text-[10px] text-muted-foreground uppercase tracking-wider">Total Earnings</span>
+        {[
+          { label: "Total Earnings", value: `${user?.total_received?.toFixed(2) ?? "0.00"} SOL`, icon: TrendingUp },
+          { label: "Recent Supporters", value: `${user?.total_supporters ?? 0}`, icon: Users },
+          { label: "Active Vaults", value: "3", icon: Vault },
+          { label: "Active Pools", value: "2", icon: Users },
+        ].map((card) => (
+          <div key={card.label} className="rounded-2xl border border-border bg-card p-5 relative overflow-hidden shadow-[0_0_24px_hsl(var(--primary)/0.08)]">
+            <div className="absolute inset-0 bg-gradient-to-br from-primary/10 via-transparent to-accent/10 opacity-70" />
+            <div className="relative z-10">
+              <div className="flex items-center gap-2 mb-3">
+                <card.icon className="w-4 h-4 text-primary" />
+                <span className="text-[10px] uppercase tracking-[0.24em] text-muted-foreground">{card.label}</span>
+              </div>
+              <p className="font-display text-2xl font-bold text-foreground tabular-nums">{card.value}</p>
             </div>
-            <p className="font-display text-2xl font-bold text-foreground tabular-nums">
-              {user?.total_received?.toFixed(2) ?? "0.00"} <span className="text-sm text-muted-foreground">SOL</span>
-            </p>
           </div>
-        </div>
-
-        <div className="rounded-2xl border border-border bg-card p-5 hover:border-primary/40 transition-all group relative overflow-hidden">
-          <div className="absolute inset-0 bg-gradient-to-br from-primary/5 via-transparent to-accent/5 opacity-0 group-hover:opacity-100 transition-opacity" />
-          <div className="relative z-10">
-            <div className="flex items-center gap-2 mb-2">
-              <Users className="w-4 h-4 text-accent" />
-              <span className="text-[10px] text-muted-foreground uppercase tracking-wider">Supporters</span>
-            </div>
-            <p className="font-display text-2xl font-bold text-foreground tabular-nums">
-              {user?.total_supporters ?? 0}
-            </p>
-          </div>
-        </div>
-
-        <div className="rounded-2xl border border-border bg-card p-5 hover:border-primary/40 transition-all group relative overflow-hidden">
-          <div className="absolute inset-0 bg-gradient-to-br from-primary/5 via-transparent to-accent/5 opacity-0 group-hover:opacity-100 transition-opacity" />
-          <div className="relative z-10">
-            <div className="flex items-center gap-2 mb-2">
-              <Vault className="w-4 h-4 text-success" />
-              <span className="text-[10px] text-muted-foreground uppercase tracking-wider">Active Vaults</span>
-            </div>
-            <p className="font-display text-2xl font-bold text-foreground tabular-nums">3</p>
-          </div>
-        </div>
-
-        <div className="rounded-2xl border border-border bg-card p-5 hover:border-primary/40 transition-all group relative overflow-hidden">
-          <div className="absolute inset-0 bg-gradient-to-br from-primary/5 via-transparent to-accent/5 opacity-0 group-hover:opacity-100 transition-opacity" />
-          <div className="relative z-10">
-            <div className="flex items-center gap-2 mb-2">
-              <Users className="w-4 h-4 text-pending" />
-              <span className="text-[10px] text-muted-foreground uppercase tracking-wider">Active Pools</span>
-            </div>
-            <p className="font-display text-2xl font-bold text-foreground tabular-nums">2</p>
-          </div>
-        </div>
+        ))}
       </motion.div>
 
-      {/* Quick Actions */}
       <motion.div variants={item} className="mb-8">
         <h3 className="font-display text-lg font-semibold text-foreground mb-3">Quick Actions</h3>
         <div className="flex flex-wrap gap-3">
@@ -115,48 +104,44 @@ const DashboardHome = ({ onNavigate }: Props) => {
             <Link2 className="w-4 h-4 mr-1.5" />
             Create Payment Link
           </Button>
-          <Button variant="secondary" onClick={() => onNavigate("vaults")}>
+          <Button onClick={() => onNavigate("vaults")}>
             <Plus className="w-4 h-4 mr-1.5" />
             New Vault
           </Button>
-          <Button variant="secondary" onClick={() => onNavigate("pools")}>
+          <Button onClick={() => onNavigate("pools")}>
             <UserPlus className="w-4 h-4 mr-1.5" />
             Join Pool
           </Button>
         </div>
       </motion.div>
 
-      {/* Recent Transactions */}
       <motion.div variants={item}>
-        <h3 className="font-display text-lg font-semibold text-foreground mb-3">Recent Transactions</h3>
-        <div className="rounded-2xl border border-border bg-card overflow-hidden">
+        <div className="flex items-center justify-between mb-3">
+          <h3 className="font-display text-lg font-semibold text-foreground">Recent Transactions</h3>
+          <Button variant="ghost" size="sm" onClick={() => onNavigate("transactions")}>
+            View all
+            <ArrowRight className="w-4 h-4 ml-1" />
+          </Button>
+        </div>
+        <div className="rounded-2xl border border-border bg-card overflow-hidden shadow-[0_0_24px_hsl(var(--primary)/0.08)]">
           <div className="divide-y divide-border">
-            {[
-              { type: "Payment Received", amount: "2.5 SOL", from: "7xKX...3sU", time: "2 hours ago", status: "confirmed" },
-              { type: "Vault Deposit", amount: "100 USDC", from: "Self", time: "1 day ago", status: "confirmed" },
-              { type: "Pool Contribution", amount: "5 SOL", from: "Self", time: "3 days ago", status: "confirmed" },
-            ].map((tx, i) => (
-              <div key={i} className="flex items-center justify-between p-4 hover:bg-secondary/50 transition-colors">
+            {recentTransactions.map((tx, i) => (
+              <div key={i} className="flex items-center justify-between p-4 hover:bg-secondary/40 transition-colors">
                 <div className="flex items-center gap-3">
-                  <div className="w-8 h-8 rounded-lg bg-primary/20 flex items-center justify-center">
+                  <div className="w-9 h-9 rounded-2xl bg-primary/15 flex items-center justify-center">
                     <ArrowDownUp className="w-4 h-4 text-primary" />
                   </div>
                   <div>
                     <p className="text-sm font-medium text-foreground">{tx.type}</p>
-                    <p className="text-xs text-muted-foreground">From: {tx.from}</p>
+                    <p className="text-xs text-muted-foreground">From {tx.from}</p>
                   </div>
                 </div>
                 <div className="text-right">
-                  <p className="text-sm font-semibold text-foreground tabular-nums">{tx.amount}</p>
+                  <p className="text-sm font-semibold text-foreground">{tx.amount}</p>
                   <p className="text-xs text-muted-foreground">{tx.time}</p>
                 </div>
               </div>
             ))}
-          </div>
-          <div className="p-3 border-t border-border">
-            <Button variant="ghost" size="sm" className="w-full text-muted-foreground" onClick={() => onNavigate("transactions")}>
-              View All Transactions
-            </Button>
           </div>
         </div>
       </motion.div>
