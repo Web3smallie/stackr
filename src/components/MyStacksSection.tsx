@@ -140,7 +140,7 @@ const MyStacksSection = () => {
     img.src = `data:image/svg+xml;charset=utf-8,${encodeURIComponent(data)}`;
   };
 
-  const displayStacks: Stack[] = hasRealStacks ? stacks : [demoStack];
+  const displayStacks: Stack[] = hasRealStacks ? stacks : [demoStack as Stack];
 
   const handleDemoClick = () => {
     toast({ title: "This is a demo", description: "Create your own to get started!" });
@@ -156,7 +156,12 @@ const MyStacksSection = () => {
         <Button onClick={() => setShowCreate((v) => !v)}><Plus className="w-4 h-4 mr-1.5" />Create Payment Page</Button>
       </div>
 
-      {!hasRealStacks && !showCreate && <DemoNotice />}
+      {/* Green info banner — My Stacks only */}
+      {!hasRealStacks && !showCreate && (
+        <div className="rounded-xl border-l-4 border-green-500 bg-green-500/10 px-4 py-3 mb-4">
+          <p className="text-sm text-green-400">We have provided a demo in each section to help new users navigate the app with ease 😊</p>
+        </div>
+      )}
 
       {showCreate && (
         <div className="rounded-2xl border border-primary/30 bg-card p-6 mb-6 relative overflow-hidden">
