@@ -429,6 +429,84 @@ const LandingPage = () => {
         </motion.div>
       </section>
 
+      {/* Privacy First */}
+      <section className="py-24 px-6 border-t border-border/50">
+        <div className="max-w-6xl mx-auto">
+          <motion.div
+            className="text-center mb-16"
+            initial={{ opacity: 0, y: 12 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true }}
+            transition={{ duration: 0.5 }}
+          >
+            <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full border border-border/60 bg-card/40 text-xs text-accent mb-6">
+              <ShieldCheck className="w-3.5 h-3.5" />
+              Privacy Protected
+            </div>
+            <h2 className="font-display text-3xl sm:text-4xl font-bold text-foreground mb-3">
+              Your money. Your business.
+            </h2>
+            <p className="text-muted-foreground max-w-xl mx-auto">
+              Stackr is built privacy-first. No public directories, no exposed earnings, no data leaks.
+            </p>
+          </motion.div>
+          <motion.div
+            className="grid sm:grid-cols-2 lg:grid-cols-3 gap-5"
+            variants={container}
+            initial="hidden"
+            whileInView="show"
+            viewport={{ once: true }}
+          >
+            {[
+              {
+                icon: Lock,
+                title: "No Public Directory",
+                description: "Your page is only accessible via direct link. Never discoverable by browsing or search.",
+              },
+              {
+                icon: ShieldCheck,
+                title: "Minimal Public Info",
+                description: "Payment pages show only your name, description, and pay button. Nothing else.",
+              },
+              {
+                title: "Anonymous Payments",
+                icon: Wallet,
+                description: "Supporters can pay without revealing their wallet address publicly.",
+              },
+              {
+                title: "Private Earnings",
+                icon: BarChart3,
+                description: "Earnings and payment history are completely private — only visible to you in your dashboard.",
+              },
+              {
+                title: "Privacy Controls",
+                icon: Target,
+                description: "Toggle visibility of earnings, supporter count, payment history, and profile photo.",
+              },
+              {
+                title: "Non-Custodial",
+                icon: Globe,
+                description: "We never hold your funds. Payments go directly to your wallet on-chain.",
+              },
+            ].map((feature) => (
+              <motion.div
+                key={feature.title}
+                variants={item}
+                className="border border-border/50 rounded-xl p-6 bg-card/40 glass"
+              >
+                <div className="w-10 h-10 rounded-lg bg-accent/10 border border-accent/20 flex items-center justify-center mb-4">
+                  <feature.icon className="w-5 h-5 text-accent" />
+                </div>
+                <h3 className="font-display text-lg font-semibold text-foreground mb-2">
+                  {feature.title}
+                </h3>
+                <p className="text-sm text-muted-foreground leading-relaxed">{feature.description}</p>
+              </motion.div>
+            ))}
+          </motion.div>
+        </div>
+      </section>
+
       {/* CTA */}
       <section className="py-24 px-6 border-t border-border/50">
         <motion.div
