@@ -75,11 +75,11 @@ const steps = [
 ];
 
 const livePayments = [
-  { name: "Sarah", amount: "2.5 SOL", time: "just now" },
-  { name: "Marcus", amount: "50 USDC", time: "2m ago" },
-  { name: "Aisha", amount: "1.2 SOL", time: "5m ago" },
-  { name: "Dev", amount: "100 USDC", time: "8m ago" },
-  { name: "Luna", amount: "0.8 SOL", time: "12m ago" },
+  { amount: "2.5 SOL", time: "just now" },
+  { amount: "50 USDC", time: "2m ago" },
+  { amount: "1.2 SOL", time: "5m ago" },
+  { amount: "100 USDC", time: "8m ago" },
+  { amount: "0.8 SOL", time: "12m ago" },
 ];
 
 const container = {
