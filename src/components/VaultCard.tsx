@@ -1,8 +1,11 @@
+import { useState } from "react";
 import { motion } from "framer-motion";
-import { Lock, Unlock, Users, Clock, TrendingUp, Sparkles } from "lucide-react";
+import { Lock, Unlock, Users, Clock, TrendingUp, Sparkles, Wallet } from "lucide-react";
 import { Progress } from "@/components/ui/progress";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { toast } from "@/hooks/use-toast";
 
 interface VaultProps {
   vault_name: string;
@@ -38,113 +41,148 @@ function getMotivation(pct: number): string | null {
   return null;
 }
 
+const depositTokens = ["SOL", "USDC", "USDT", "BAGS"] as const;
+
 const VaultCard = ({ vault }: { vault: VaultProps }) => {
   const pct = vault.vault_progress_percentage;
   const daysLeft = getDaysUntil(vault.unlock_date);
   const motivation = getMotivation(pct);
   const tokenClass = tokenColors[vault.vault_target_token] || tokenColors.SOL;
 
+  const [showDeposit, setShowDeposit] = useState(false);
+  const [depositAmount, setDepositAmount] = useState("");
+  const [depositToken, setDepositToken] = useState<typeof depositTokens[number]>(vault.vault_target_token);
+
+  const confirmDeposit = () => {
+    if (!depositAmount || Number(depositAmount) <= 0) {
+      toast({ title: "Enter a valid amount", variant: "destructive" });
+      return;
+    }
+    toast({ title: "Deposit confirmed", description: `${depositAmount} ${depositToken} deposited into ${vault.vault_name}` });
+    setShowDeposit(false);
+    setDepositAmount("");
+  };
+
+  const shareVault = () => {
+    const shareText = `Support my vault \"${vault.vault_name}\" on Stackr`;
+    navigator.clipboard.writeText(shareText);
+    toast({ title: "Vault link copied", description: "Share text copied to clipboard." });
+  };
+
   return (
-    <motion.div
-      initial={{ opacity: 0, y: 20 }}
-      animate={{ opacity: 1, y: 0 }}
-      className="rounded-2xl border border-border bg-card p-6 hover:border-primary/40 transition-all duration-300 group relative overflow-hidden"
-    >
-      {/* Glow effect */}
-      <div className="absolute inset-0 bg-gradient-to-br from-primary/5 via-transparent to-accent/5 opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
-
-      <div className="relative z-10">
-        {/* Header */}
-        <div className="flex items-start justify-between mb-4">
-          <div className="flex items-center gap-3">
-            <div className={`w-10 h-10 rounded-xl flex items-center justify-center ${vault.is_locked ? "bg-primary/20" : "bg-success/20"}`}>
-              {vault.is_locked ? (
-                <Lock className="w-5 h-5 text-primary" />
-              ) : (
-                <Unlock className="w-5 h-5 text-success" />
-              )}
-            </div>
-            <div>
-              <h3 className="font-display text-lg font-bold text-foreground">{vault.vault_name}</h3>
-              {vault.vault_purpose && (
-                <p className="text-xs text-muted-foreground">{vault.vault_purpose}</p>
-              )}
+    <>
+      {showDeposit && (
+        <div className="fixed inset-0 z-40 flex items-center justify-center bg-background/80 backdrop-blur-sm p-4">
+          <div className="w-full max-w-md rounded-3xl border border-primary/30 bg-card p-6 shadow-[0_0_40px_hsl(var(--primary)/0.2)]">
+            <h4 className="font-display text-xl font-bold text-foreground mb-1">Deposit into {vault.vault_name}</h4>
+            <p className="text-xs text-muted-foreground mb-4">Choose amount and token, then confirm your transaction.</p>
+            <div className="space-y-4">
+              <Input value={depositAmount} onChange={(e) => setDepositAmount(e.target.value)} type="number" placeholder="Amount" className="bg-secondary border-border" />
+              <div className="grid grid-cols-4 gap-2">
+                {depositTokens.map((token) => (
+                  <button
+                    key={token}
+                    type="button"
+                    onClick={() => setDepositToken(token)}
+                    className={`rounded-lg px-2 py-2 text-xs font-semibold border transition-all ${
+                      depositToken === token
+                        ? "border-primary/60 bg-primary text-primary-foreground shadow-[0_0_16px_hsl(var(--primary)/0.25)]"
+                        : "border-border bg-secondary text-muted-foreground hover:border-primary/40"
+                    }`}
+                  >
+                    {token}
+                  </button>
+                ))}
+              </div>
+              <div className="rounded-xl border border-primary/20 bg-secondary/60 p-3 text-xs text-muted-foreground">
+                You are depositing <span className="font-semibold text-foreground">{depositAmount || "0"} {depositToken}</span>.
+              </div>
+              <div className="flex gap-2">
+                <Button variant="ghost" className="flex-1" onClick={() => setShowDeposit(false)}>Cancel</Button>
+                <Button className="flex-1" onClick={confirmDeposit}>Confirm Deposit</Button>
+              </div>
             </div>
           </div>
-
-          <Badge variant="outline" className={`text-xs border ${tokenClass}`}>
-            {vault.vault_target_token}
-          </Badge>
         </div>
+      )}
 
-        {/* Progress */}
-        <div className="mb-4">
-          <div className="flex items-center justify-between mb-2">
-            <span className="text-sm text-muted-foreground">
-              Saved: <span className="font-semibold text-foreground tabular-nums">{vault.current_amount} {vault.vault_target_token}</span>
-            </span>
-            <span className="text-sm font-bold text-primary tabular-nums">{pct}% there!</span>
+      <motion.div
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        className="rounded-2xl border border-border bg-card p-6 hover:border-primary/40 transition-all duration-300 group relative overflow-hidden"
+      >
+        <div className="absolute inset-0 bg-gradient-to-br from-primary/5 via-transparent to-accent/5 opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
+
+        <div className="relative z-10">
+          <div className="flex items-start justify-between mb-4">
+            <div className="flex items-center gap-3">
+              <div className={`w-10 h-10 rounded-xl flex items-center justify-center ${vault.is_locked ? "bg-primary/20" : "bg-success/20"}`}>
+                {vault.is_locked ? <Lock className="w-5 h-5 text-primary" /> : <Unlock className="w-5 h-5 text-success" />}
+              </div>
+              <div>
+                <h3 className="font-display text-lg font-bold text-foreground">{vault.vault_name}</h3>
+                {vault.vault_purpose && <p className="text-xs text-muted-foreground">{vault.vault_purpose}</p>}
+              </div>
+            </div>
+
+            <Badge variant="outline" className={`text-xs border ${tokenClass}`}>{vault.vault_target_token}</Badge>
           </div>
-          <Progress value={pct} className="h-3 bg-secondary" />
-          <p className="text-xs text-muted-foreground mt-1.5">
-            Goal: <span className="font-semibold text-foreground tabular-nums">{vault.vault_target} {vault.vault_target_token}</span>
-          </p>
-        </div>
 
-        {/* Motivation */}
-        {motivation && (
-          <motion.div
-            initial={{ opacity: 0, scale: 0.95 }}
-            animate={{ opacity: 1, scale: 1 }}
-            className="mb-4 px-3 py-2 rounded-lg bg-primary/10 border border-primary/20"
-          >
-            <p className="text-xs font-medium text-primary flex items-center gap-1.5">
-              <Sparkles className="w-3.5 h-3.5" />
-              {motivation}
+          <div className="mb-4">
+            <div className="flex items-center justify-between mb-2">
+              <span className="text-sm text-muted-foreground">
+                Saved: <span className="font-semibold text-foreground tabular-nums">{vault.current_amount} {vault.vault_target_token}</span>
+              </span>
+              <span className="text-sm font-bold text-primary tabular-nums">{pct}% there!</span>
+            </div>
+            <Progress value={pct} className="h-3 bg-secondary" />
+            <p className="text-xs text-muted-foreground mt-1.5">
+              Goal: <span className="font-semibold text-foreground tabular-nums">{vault.vault_target} {vault.vault_target_token}</span>
             </p>
-          </motion.div>
-        )}
+          </div>
 
-        {/* Info chips */}
-        <div className="flex flex-wrap gap-2 mb-4">
-          {daysLeft !== null && (
-            <span className="inline-flex items-center gap-1 text-xs px-2.5 py-1 rounded-full bg-secondary text-muted-foreground">
-              <Clock className="w-3 h-3" />
-              {daysLeft === 0 ? "Unlocks today!" : `Unlocks in ${daysLeft} days`}
-            </span>
+          {motivation && (
+            <motion.div initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} className="mb-4 px-3 py-2 rounded-lg bg-primary/10 border border-primary/20">
+              <p className="text-xs font-medium text-primary flex items-center gap-1.5">
+                <Sparkles className="w-3.5 h-3.5" />
+                {motivation}
+              </p>
+            </motion.div>
           )}
-          {vault.allow_contributions && (
-            <span className="inline-flex items-center gap-1 text-xs px-2.5 py-1 rounded-full bg-accent/10 text-accent">
-              <Users className="w-3 h-3" />
-              Friends can contribute
-            </span>
-          )}
-          {vault.is_completed && (
-            <span className="inline-flex items-center gap-1 text-xs px-2.5 py-1 rounded-full bg-success/10 text-success">
-              <TrendingUp className="w-3 h-3" />
-              Goal reached!
-            </span>
-          )}
-        </div>
 
-        {/* Notes */}
-        {vault.vault_notes && (
-          <p className="text-xs text-muted-foreground italic mb-4">"{vault.vault_notes}"</p>
-        )}
+          <div className="flex flex-wrap gap-2 mb-4">
+            {daysLeft !== null && (
+              <span className="inline-flex items-center gap-1 text-xs px-2.5 py-1 rounded-full bg-secondary text-muted-foreground">
+                <Clock className="w-3 h-3" />
+                {daysLeft === 0 ? "Unlocks today!" : `Unlocks in ${daysLeft} days`}
+              </span>
+            )}
+            {vault.allow_contributions && (
+              <span className="inline-flex items-center gap-1 text-xs px-2.5 py-1 rounded-full bg-accent/10 text-accent">
+                <Users className="w-3 h-3" />
+                Friends can contribute
+              </span>
+            )}
+            {vault.is_completed && (
+              <span className="inline-flex items-center gap-1 text-xs px-2.5 py-1 rounded-full bg-success/10 text-success">
+                <TrendingUp className="w-3 h-3" />
+                Goal reached!
+              </span>
+            )}
+          </div>
 
-        {/* Actions */}
-        <div className="flex gap-2">
-          <Button size="sm" className="flex-1" disabled={!vault.is_locked}>
-            {vault.is_locked ? "Deposit" : "Withdraw"}
-          </Button>
-          {vault.allow_contributions && (
-            <Button size="sm" variant="outline" className="flex-1">
-              Share Vault
+          {vault.vault_notes && <p className="text-xs text-muted-foreground italic mb-4">"{vault.vault_notes}"</p>}
+
+          <div className="flex gap-2">
+            <Button size="sm" className="flex-1" disabled={!vault.is_locked} onClick={() => setShowDeposit(true)}>
+              <Wallet className="w-4 h-4 mr-1" />
+              Deposit
             </Button>
-          )}
+            <Button size="sm" className="flex-1" onClick={shareVault}>Share Vault</Button>
+          </div>
         </div>
-      </div>
-    </motion.div>
+      </motion.div>
+    </>
   );
 };
 
