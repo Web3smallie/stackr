@@ -1,6 +1,17 @@
 import { useEffect, useState } from "react";
 import { motion } from "framer-motion";
-import { Settings, User, Camera, Trash2, AlertTriangle, Bell, Loader2 } from "lucide-react";
+import { Settings, User, Camera, Trash2, Bell, Loader2 } from "lucide-react";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Switch } from "@/components/ui/switch";
