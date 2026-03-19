@@ -16,6 +16,8 @@ import {
   Eye,
   Plus,
   Sparkles,
+  Menu,
+  X,
 } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
@@ -25,7 +27,6 @@ import { Button } from "@/components/ui/button";
 import { Switch } from "@/components/ui/switch";
 import DashboardHome from "@/components/DashboardHome";
 import WalletButton from "@/components/WalletButton";
-import VaultCard from "@/components/VaultCard";
 import OnboardingModal from "@/components/OnboardingModal";
 import PoolsSection from "@/components/PoolsSection";
 import MyStacksSection from "@/components/MyStacksSection";
@@ -35,6 +36,7 @@ import FundraisingSection from "@/components/FundraisingSection";
 import TokenGatesSection from "@/components/TokenGatesSection";
 import ReferralsSection from "@/components/ReferralsSection";
 import AnalyticsSection from "@/components/AnalyticsSection";
+import VaultCard from "@/components/VaultCard";
 import { useAuth, truncateWallet } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
 import { Input } from "@/components/ui/input";
@@ -116,6 +118,7 @@ const Dashboard = () => {
   const [signatureVerified, setSignatureVerified] = useState(false);
   const [verifying, setVerifying] = useState(false);
   const [showCreateVault, setShowCreateVault] = useState(false);
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [vaultForm, setVaultForm] = useState({ name: "", purpose: "", target: "", token: "SOL", unlockDate: "", allowContributions: false });
   const [privacySaving, setPrivacySaving] = useState(false);
   const [privacyState, setPrivacyState] = useState({
@@ -159,7 +162,7 @@ const Dashboard = () => {
       await signMessage(new TextEncoder().encode(message));
       setSignatureVerified(true);
       await refreshUser();
-      toast({ title: "Wallet verified", description: "You’re now signed into Stackr." });
+      toast({ title: "Wallet verified", description: "You're now signed into Stackr." });
     } catch (error) {
       toast({ title: "Signature required", description: "You need to sign the message to continue.", variant: "destructive" });
     } finally {
@@ -205,35 +208,48 @@ const Dashboard = () => {
   };
 
   const createVault = () => {
-    toast({ title: "Vault created", description: `${vaultForm.name || "New vault"} is ready.` });
+    toast({ title: "Vault created!", description: `${vaultForm.name || "New vault"} is ready.` });
     setShowCreateVault(false);
     setVaultForm({ name: "", purpose: "", target: "", token: "SOL", unlockDate: "", allowContributions: false });
   };
 
+  const handleSectionChange = (section: string) => {
+    setActiveSection(section);
+    setMobileMenuOpen(false);
+  };
+
+  // Connect wallet page with signature verification modal overlay
   if (!connected) {
     return (
-      <div className="min-h-screen gradient-bg flex items-center justify-center p-4">
+      <div className="min-h-screen gradient-bg flex items-center justify-center p-4 relative">
         <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="w-full max-w-xl rounded-[2rem] border border-primary/25 bg-card p-8 text-center shadow-[0_0_50px_hsl(var(--primary)/0.18)]">
           <div className="w-20 h-20 rounded-3xl gradient-primary flex items-center justify-center mx-auto mb-8 shadow-[0_0_36px_hsl(var(--primary)/0.28)]">
             <Wallet className="w-10 h-10 text-primary-foreground" />
           </div>
-          <h1 className="font-display text-4xl font-bold text-foreground mb-3">Connect your wallet</h1>
-          <p className="text-muted-foreground mb-8 max-w-md mx-auto">
+          <h1 className="font-display text-3xl sm:text-4xl font-bold text-foreground mb-3">Connect your wallet</h1>
+          <p className="text-muted-foreground mb-8 max-w-md mx-auto text-sm sm:text-base">
             Connect any supported Solana wallet to open your Stackr dashboard, then verify ownership with a gasless signature.
           </p>
 
           <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 max-w-md mx-auto mb-8">
-            {["Phantom", "Backpack", "Solflare", "Coinbase", "Bags", "More"] .map((wallet) => (
+            {[
+              { name: "Phantom", letter: "👻" },
+              { name: "Backpack", letter: "🎒" },
+              { name: "Solflare", letter: "🔥" },
+              { name: "Coinbase", letter: "🪙" },
+              { name: "Bags", letter: "💼" },
+              { name: "More", letter: "+" },
+            ].map((wallet) => (
               <button
-                key={wallet}
+                key={wallet.name}
                 type="button"
                 onClick={() => setVisible(true)}
                 className="rounded-2xl border border-primary/20 bg-secondary/70 p-4 hover:border-primary/50 hover:shadow-[0_0_24px_hsl(var(--primary)/0.18)] transition-all flex flex-col items-center gap-2"
               >
-                <div className="w-10 h-10 rounded-2xl gradient-primary flex items-center justify-center text-primary-foreground font-bold text-sm">
-                  {wallet[0]}
+                <div className="w-10 h-10 rounded-2xl bg-secondary flex items-center justify-center text-xl">
+                  {wallet.letter}
                 </div>
-                <span className="text-xs font-medium text-foreground">{wallet}</span>
+                <span className="text-xs font-medium text-foreground">{wallet.name}</span>
               </button>
             ))}
           </div>
@@ -247,28 +263,49 @@ const Dashboard = () => {
     );
   }
 
+  // Signature verification as a modal overlay on top of the connect page background
+  const signatureModal = connected && !signatureVerified ? (
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-background/80 backdrop-blur-sm p-4">
+      <motion.div
+        initial={{ scale: 0.96, opacity: 0, y: 10 }}
+        animate={{ scale: 1, opacity: 1, y: 0 }}
+        className="w-full max-w-lg rounded-3xl border border-primary/30 bg-card p-8 shadow-[0_0_50px_hsl(var(--primary)/0.22)]"
+      >
+        <div className="text-center mb-6">
+          <div className="w-16 h-16 rounded-3xl gradient-primary flex items-center justify-center mx-auto mb-4 shadow-[0_0_28px_hsl(var(--primary)/0.28)]">
+            <Sparkles className="w-8 h-8 text-primary-foreground" />
+          </div>
+          <h2 className="font-display text-2xl sm:text-3xl font-bold text-foreground">Verify your wallet</h2>
+          <p className="text-sm text-muted-foreground mt-2 max-w-md mx-auto">
+            Sign this message to verify you own this wallet and log into Stackr — this does not cost any gas fees.
+          </p>
+        </div>
+        <div className="rounded-2xl border border-primary/20 bg-secondary/70 p-4 mb-6">
+          <p className="text-xs uppercase tracking-[0.22em] text-muted-foreground mb-1">Connected wallet</p>
+          <p className="text-sm font-mono text-foreground break-all">{publicKey?.toBase58()}</p>
+        </div>
+        <div className="flex flex-col sm:flex-row gap-3">
+          <Button size="lg" className="flex-1" onClick={() => void handleSignatureVerify()} disabled={verifying || loading}>
+            {verifying ? "Waiting for signature..." : "Sign Message"}
+          </Button>
+          <Button variant="ghost" size="lg" onClick={() => navigate("/")}>Back</Button>
+        </div>
+      </motion.div>
+    </div>
+  ) : null;
+
   if (!signatureVerified) {
     return (
       <div className="min-h-screen gradient-bg flex items-center justify-center p-4">
-        <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="w-full max-w-2xl rounded-[2rem] border border-primary/25 bg-card p-8 md:p-10 shadow-[0_0_50px_hsl(var(--primary)/0.18)]">
-          <div className="w-16 h-16 rounded-3xl gradient-primary flex items-center justify-center mb-6 shadow-[0_0_28px_hsl(var(--primary)/0.28)]">
-            <Sparkles className="w-8 h-8 text-primary-foreground" />
+        {/* Background connect wallet page */}
+        <div className="w-full max-w-xl rounded-[2rem] border border-primary/25 bg-card p-8 text-center shadow-[0_0_50px_hsl(var(--primary)/0.18)] opacity-30 pointer-events-none">
+          <div className="w-20 h-20 rounded-3xl gradient-primary flex items-center justify-center mx-auto mb-8">
+            <Wallet className="w-10 h-10 text-primary-foreground" />
           </div>
-          <h1 className="font-display text-4xl font-bold text-foreground mb-4">Verify your wallet</h1>
-          <p className="text-base text-muted-foreground max-w-xl leading-relaxed mb-6">
-            Sign this message to verify you own this wallet and log into Stackr — this does not cost any gas fees.
-          </p>
-          <div className="rounded-2xl border border-primary/20 bg-secondary/70 p-4 mb-6">
-            <p className="text-xs uppercase tracking-[0.22em] text-muted-foreground mb-1">Connected wallet</p>
-            <p className="text-sm font-mono text-foreground break-all">{publicKey?.toBase58()}</p>
-          </div>
-          <div className="flex flex-wrap gap-3">
-            <Button size="lg" onClick={() => void handleSignatureVerify()} disabled={verifying || loading}>
-              {verifying ? "Waiting for signature..." : "Sign message"}
-            </Button>
-            <Button variant="ghost" size="lg" onClick={() => navigate("/")}>Back to landing</Button>
-          </div>
-        </motion.div>
+          <h1 className="font-display text-3xl font-bold text-foreground mb-3">Connect your wallet</h1>
+          <p className="text-muted-foreground mb-8">Wallet connected, verifying...</p>
+        </div>
+        {signatureModal}
       </div>
     );
   }
@@ -276,6 +313,38 @@ const Dashboard = () => {
   return (
     <div className="min-h-screen bg-background flex">
       <OnboardingModal canShow={signatureVerified} />
+
+      {/* Mobile menu overlay */}
+      {mobileMenuOpen && (
+        <div className="fixed inset-0 z-40 bg-background/95 backdrop-blur-sm md:hidden">
+          <div className="flex items-center justify-between px-4 h-16 border-b border-border">
+            <span className="font-display text-xl font-bold text-foreground">STACKR</span>
+            <Button variant="ghost" size="icon" onClick={() => setMobileMenuOpen(false)}>
+              <X className="w-5 h-5" />
+            </Button>
+          </div>
+          <nav className="flex flex-col gap-1 p-4">
+            {sidebarLinks.map((link) => (
+              <button
+                key={link.label}
+                type="button"
+                onClick={() => handleSectionChange(link.section)}
+                className={`flex items-center gap-3 px-3 py-3 rounded-xl text-sm font-medium transition-colors duration-200 ${
+                  activeSection === link.section
+                    ? "bg-primary text-primary-foreground shadow-[0_0_24px_hsl(var(--primary)/0.18)]"
+                    : "text-muted-foreground hover:text-foreground hover:bg-secondary"
+                }`}
+              >
+                <link.icon className="w-4 h-4" />
+                {link.label}
+              </button>
+            ))}
+          </nav>
+          <div className="px-4 mt-4">
+            <WalletButton />
+          </div>
+        </div>
+      )}
 
       {showCreateVault && (
         <div className="fixed inset-0 z-40 flex items-center justify-center bg-background/80 backdrop-blur-sm p-4">
@@ -309,6 +378,7 @@ const Dashboard = () => {
         </div>
       )}
 
+      {/* Desktop sidebar */}
       <aside className="hidden md:flex w-60 border-r border-border flex-col justify-between py-6 px-4 bg-background fixed h-screen overflow-y-auto">
         <div>
           <span className="font-display text-xl font-bold text-foreground px-3 cursor-pointer" onClick={() => navigate("/")}>STACKR</span>
@@ -337,8 +407,13 @@ const Dashboard = () => {
       </aside>
 
       <main className="flex-1 md:ml-60">
-        <header className="border-b border-border px-6 md:px-8 h-16 flex items-center justify-between sticky top-0 bg-background/80 backdrop-blur-sm z-10">
-          <span className="md:hidden font-display text-lg font-bold text-foreground cursor-pointer" onClick={() => navigate("/")}>STACKR</span>
+        <header className="border-b border-border px-4 sm:px-6 md:px-8 h-16 flex items-center justify-between sticky top-0 bg-background/80 backdrop-blur-sm z-10">
+          <div className="flex items-center gap-3">
+            <Button variant="ghost" size="icon" className="md:hidden" onClick={() => setMobileMenuOpen(true)}>
+              <Menu className="w-5 h-5" />
+            </Button>
+            <span className="md:hidden font-display text-lg font-bold text-foreground cursor-pointer" onClick={() => navigate("/")}>STACKR</span>
+          </div>
           <div className="hidden md:block" />
           <div className="flex items-center gap-3">
             {user?.is_anonymous && (
@@ -351,7 +426,7 @@ const Dashboard = () => {
           </div>
         </header>
 
-        <div className="p-6 md:p-8 max-w-6xl">
+        <div className="p-4 sm:p-6 md:p-8 max-w-6xl">
           <motion.div variants={container} initial="hidden" animate="show">
             {activeSection === "dashboard" && <DashboardHome onNavigate={setActiveSection} />}
             {activeSection === "stacks" && <MyStacksSection />}
