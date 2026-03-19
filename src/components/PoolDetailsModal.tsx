@@ -51,7 +51,7 @@ const PoolDetailsModal = ({ pool, onClose, onLeavePool }: PoolDetailsModalProps)
 
   const leavePool = () => {
     onLeavePool?.(pool.id);
-    toast({ title: "Pool left", description: `You left ${pool.name}.` });
+    toast({ title: "Pool left!", description: `You left ${pool.name}. Your contribution will be returned.` });
     setConfirmLeave(false);
     onClose();
   };
@@ -159,16 +159,26 @@ const PoolDetailsModal = ({ pool, onClose, onLeavePool }: PoolDetailsModalProps)
           </div>
 
           {!confirmLeave ? (
-            <Button className="w-full" onClick={() => setConfirmLeave(true)}>
-              <LogOut className="w-4 h-4 mr-1.5" />
+            <button
+              type="button"
+              onClick={() => setConfirmLeave(true)}
+              className="w-full inline-flex items-center justify-center gap-2 rounded-lg px-4 py-2.5 text-sm font-medium bg-destructive text-destructive-foreground hover:bg-destructive/90 transition-colors"
+            >
+              <LogOut className="w-4 h-4" />
               Leave Pool
-            </Button>
+            </button>
           ) : (
             <div className="rounded-xl border border-destructive/30 bg-destructive/10 p-4">
-              <p className="text-sm text-foreground mb-3">Are you sure you want to leave this pool?</p>
+              <p className="text-sm text-foreground mb-3">Are you sure you want to leave this pool? Your contribution will be returned.</p>
               <div className="flex gap-2">
                 <Button variant="ghost" className="flex-1" onClick={() => setConfirmLeave(false)}>Cancel</Button>
-                <Button className="flex-1" onClick={leavePool}>Confirm Leave</Button>
+                <button
+                  type="button"
+                  onClick={leavePool}
+                  className="flex-1 inline-flex items-center justify-center rounded-lg px-4 py-2 text-sm font-medium bg-destructive text-destructive-foreground hover:bg-destructive/90 transition-colors"
+                >
+                  Confirm Leave
+                </button>
               </div>
             </div>
           )}
