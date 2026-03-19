@@ -72,6 +72,7 @@ export default {
       boxShadow: {
         sm: "var(--shadow-sm)",
         md: "var(--shadow-md)",
+        glow: "var(--shadow-glow)",
       },
       transitionTimingFunction: {
         "out-expo": "var(--ease-out-expo)",
