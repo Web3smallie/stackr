@@ -4,7 +4,7 @@ import { Button } from "@/components/ui/button";
 import { useAuth } from "@/contexts/AuthContext";
 import { useState } from "react";
 import { toast } from "@/hooks/use-toast";
-import DemoBadge, { DemoNotice } from "@/components/DemoBadge";
+import DemoBadge from "@/components/DemoBadge";
 
 const leaderboard = [{ rank: 1, wallet: "7xKX...3sU", referrals: 42, earnings: 4.2 }, { rank: 2, wallet: "9pQr...7wE", referrals: 31, earnings: 3.1 }, { rank: 3, wallet: "3jKl...5mN", referrals: 28, earnings: 2.8 }];
 
