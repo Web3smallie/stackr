@@ -309,7 +309,7 @@ const LandingPage = () => {
           transition={{ duration: 0.6 }}
         >
           <blockquote className="font-display text-xl sm:text-2xl font-medium text-foreground leading-relaxed mb-6">
-            "Stackr was built for the 1.4 billion creators worldwide who cannot access PayPal, Stripe, or traditional banking. Whether you're a musician in Lagos, an artist in Manila, or a developer in Cairo — if you have a Solana wallet, you have a complete payment infrastructure."
+            "Stackr was built for the 1.4 billion creators worldwide who cannot access PayPal, Stripe, or traditional banking. Whether you're a musician in Nairobi, an artist in Manila, or a developer in Cairo — if you have a Solana wallet, you have a complete payment infrastructure."
           </blockquote>
           <div className="inline-flex items-center gap-2 text-sm text-muted-foreground">
             <span className="w-8 h-px bg-accent/40" />
