@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { toast } from "@/hooks/use-toast";
+import DemoBadge, { DemoNotice } from "@/components/DemoBadge";
 
 const tokenColors: Record<string, string> = {
   SOL: "bg-orange-500/20 text-orange-400 border-orange-500/30",
@@ -15,37 +16,47 @@ const tokenColors: Record<string, string> = {
 const allTokens = ["SOL", "USDC", "USDT", "BAGS"] as const;
 const contentTypes = [{ value: "text", label: "Text", icon: FileText }, { value: "link", label: "Link", icon: Link2 }, { value: "video", label: "Video", icon: Video }];
 
-const demoGates = [
-  { id: "1", title: "Exclusive Merch Link", content_type: "link", required_amount: 5, token: "SOL", unlocks: 12, content: "https://stackr.app/secret" },
-  { id: "2", title: "Behind the Scenes Video", content_type: "video", required_amount: 10, token: "USDC", unlocks: 8, content: "Private video upload" },
-];
+interface Gate {
+  id: string; title: string; content_type: string; required_amount: number; token: string; unlocks: number; content: string; isDemo?: boolean;
+}
+
+const demoGate: Gate = { id: "demo-1", title: "Exclusive Merch Link", content_type: "link", required_amount: 5, token: "SOL", unlocks: 12, content: "https://stackr.app/secret", isDemo: true };
 
 const TokenGatesSection = () => {
   const [showCreate, setShowCreate] = useState(false);
-  const [activeGate, setActiveGate] = useState<(typeof demoGates)[number] | null>(null);
+  const [gates, setGates] = useState<Gate[]>([]);
+  const [activeGate, setActiveGate] = useState<Gate | null>(null);
   const [unlocking, setUnlocking] = useState(false);
   const [form, setForm] = useState({ title: "", content: "", content_type: "text", required_amount: "", token: "SOL", videoFileName: "" });
+
+  const hasReal = gates.length > 0;
+  const displayGates = hasReal ? gates : [demoGate];
 
   const createGate = () => {
     if (!form.title || !form.required_amount) {
       toast({ title: "Missing fields", variant: "destructive" });
       return;
     }
-    toast({ title: "Gate created", description: `${form.title} is now locked.` });
+    const newGate: Gate = { id: crypto.randomUUID(), title: form.title, content_type: form.content_type, required_amount: Number(form.required_amount), token: form.token, unlocks: 0, content: form.content };
+    setGates((prev) => [...prev, newGate]);
+    toast({ title: "Gate created!", description: `${form.title} is now locked.` });
     setShowCreate(false);
+    setForm({ title: "", content: "", content_type: "text", required_amount: "", token: "SOL", videoFileName: "" });
   };
 
   const unlockGate = async () => {
     setUnlocking(true);
     setTimeout(() => {
       setUnlocking(false);
-      toast({ title: "Gate unlocked", description: "Payment verified and content revealed." });
+      toast({ title: "Gate unlocked!", description: "Payment verified and content revealed." });
     }, 600);
   };
 
+  const handleDemoClick = () => toast({ title: "This is a demo", description: "Create your own to get started!" });
+
   return (
     <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }}>
-      {activeGate && (
+      {activeGate && !activeGate.isDemo && (
         <div className="fixed inset-0 z-40 flex items-center justify-center bg-background/80 backdrop-blur-sm p-4">
           <div className="w-full max-w-lg rounded-3xl border border-primary/30 bg-card p-6 shadow-[0_0_40px_hsl(var(--primary)/0.2)]">
             <h3 className="font-display text-xl font-bold text-foreground mb-1">{activeGate.title}</h3>
@@ -69,6 +80,8 @@ const TokenGatesSection = () => {
         <Button onClick={() => setShowCreate((v) => !v)}><Plus className="w-4 h-4 mr-1.5" />Create Gate</Button>
       </div>
 
+      {!hasReal && !showCreate && <DemoNotice />}
+
       {showCreate && (
         <div className="rounded-2xl border border-primary/30 bg-card p-6 mb-6 relative overflow-hidden">
           <div className="absolute inset-0 bg-gradient-to-br from-primary/5 via-transparent to-accent/5" />
@@ -91,18 +104,25 @@ const TokenGatesSection = () => {
       )}
 
       <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
-        {demoGates.map((gate) => {
+        {displayGates.map((gate) => {
           const TypeIcon = contentTypes.find((item) => item.value === gate.content_type)?.icon || FileText;
+          const isDemo = !!gate.isDemo;
           return (
-            <div key={gate.id} className="rounded-2xl border border-border bg-card p-6 relative overflow-hidden">
+            <div key={gate.id} className={`rounded-2xl border border-border bg-card p-6 relative overflow-hidden ${isDemo ? "opacity-60" : ""}`} onClick={isDemo ? handleDemoClick : undefined}>
               <div className="absolute inset-0 bg-gradient-to-br from-primary/5 via-transparent to-accent/5 opacity-70" />
               <div className="relative z-10">
-                <div className="flex items-start justify-between mb-3"><div className="w-10 h-10 rounded-xl bg-primary/20 flex items-center justify-center"><Lock className="w-5 h-5 text-primary" /></div><Badge variant="outline" className={`text-xs border ${tokenColors[gate.token]}`}>{gate.token}</Badge></div>
+                <div className="flex items-start justify-between mb-3">
+                  <div className="w-10 h-10 rounded-xl bg-primary/20 flex items-center justify-center"><Lock className="w-5 h-5 text-primary" /></div>
+                  <div className="flex items-center gap-2">
+                    {isDemo && <DemoBadge />}
+                    <Badge variant="outline" className={`text-xs border ${tokenColors[gate.token]}`}>{gate.token}</Badge>
+                  </div>
+                </div>
                 <h3 className="font-display text-base font-bold text-foreground mb-1">{gate.title}</h3>
                 <div className="flex items-center gap-2 mb-3"><TypeIcon className="w-3 h-3 text-muted-foreground" /><span className="text-xs text-muted-foreground capitalize">{gate.content_type}</span></div>
                 <p className="text-sm text-muted-foreground mb-3">Requires <span className="font-semibold text-foreground">{gate.required_amount} {gate.token}</span> to unlock</p>
                 <div className="flex items-center gap-1 text-xs text-accent mb-4"><Unlock className="w-3 h-3" />{gate.unlocks} unlocks</div>
-                <Button size="sm" className="w-full" onClick={() => setActiveGate(gate)}><Eye className="w-4 h-4 mr-1.5" />View Gate</Button>
+                {!isDemo && <Button size="sm" className="w-full" onClick={() => setActiveGate(gate)}><Eye className="w-4 h-4 mr-1.5" />View Gate</Button>}
               </div>
             </div>
           );
