@@ -1,7 +1,7 @@
 import { motion } from "framer-motion";
 import { ArrowDownUp, ExternalLink, ArrowDownLeft, ArrowUpRight, RefreshCw, Vault } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
-import DemoBadge, { DemoNotice } from "@/components/DemoBadge";
+import DemoBadge from "@/components/DemoBadge";
 
 const tokenColors: Record<string, string> = {
   SOL: "bg-orange-500/20 text-orange-400 border-orange-500/30",
@@ -31,7 +31,7 @@ const TransactionsSection = () => {
         <h2 className="font-display text-2xl font-bold text-foreground">Transactions</h2>
         <p className="text-sm text-muted-foreground mt-1">History across payments, vaults, pools and subscriptions.</p>
       </div>
-      {!hasReal && <DemoNotice />}
+      
       <div className="rounded-2xl border border-border bg-card overflow-hidden">
         <div className="hidden md:grid grid-cols-8 gap-4 px-5 py-3 text-[10px] uppercase tracking-wider text-muted-foreground border-b border-border bg-secondary/50">
           <span></span><span>Date</span><span>Amount</span><span>Token</span><span>From</span><span>Type</span><span>Status</span><span className="text-right">Solscan</span>

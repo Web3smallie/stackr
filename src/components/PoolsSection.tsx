@@ -1,7 +1,7 @@
 import { useMemo, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Plus, UserPlus, Users, Vote, TrendingUp, X, BarChart3, Zap, Search, LogOut, Loader2 } from "lucide-react";
-import DemoBadge, { DemoNotice } from "@/components/DemoBadge";
+import DemoBadge from "@/components/DemoBadge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
@@ -300,7 +300,7 @@ const PoolsSection = () => {
       {(view === "active" || view === "voting") && (
         <>
           <h3 className="font-display text-lg font-bold text-foreground mb-4 flex items-center gap-2"><BarChart3 className="w-5 h-5 text-primary" />My Active Pools</h3>
-          {pools.length === 0 && <DemoNotice />}
+          
           {filteredPools.length === 0 && searchQuery && (
             <p className="text-sm text-muted-foreground text-center py-8">No pools found matching "{searchQuery}"</p>
           )}

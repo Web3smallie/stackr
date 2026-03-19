@@ -4,7 +4,7 @@ import { Button } from "@/components/ui/button";
 import { useAuth } from "@/contexts/AuthContext";
 import { useState } from "react";
 import { toast } from "@/hooks/use-toast";
-import DemoBadge, { DemoNotice } from "@/components/DemoBadge";
+import DemoBadge from "@/components/DemoBadge";
 
 const leaderboard = [{ rank: 1, wallet: "7xKX...3sU", referrals: 42, earnings: 4.2 }, { rank: 2, wallet: "9pQr...7wE", referrals: 31, earnings: 3.1 }, { rank: 3, wallet: "3jKl...5mN", referrals: 28, earnings: 2.8 }];
 
@@ -28,7 +28,7 @@ const ReferralsSection = () => {
       <div className="mb-6"><h2 className="font-display text-2xl font-bold text-foreground flex items-center gap-2"><Gift className="w-6 h-6 text-primary" />Referrals</h2><p className="text-sm text-muted-foreground mt-1">Track your unique link, referral count and earnings.</p></div>
       <div className="rounded-2xl border border-primary/30 bg-card p-6 mb-6 relative overflow-hidden"><div className="absolute inset-0 bg-gradient-to-br from-primary/5 via-transparent to-accent/5" /><div className="relative z-10"><h3 className="font-display text-lg font-bold text-foreground mb-3">Your Referral Link</h3><div className="flex items-center gap-3"><div className="flex-1 px-4 py-2.5 rounded-xl bg-secondary border border-border font-mono text-sm text-muted-foreground truncate">{refLink}</div><Button onClick={copyLink}>{copied ? <Check className="w-4 h-4 mr-1.5" /> : <Copy className="w-4 h-4 mr-1.5" />}{copied ? "Copied" : "Copy"}</Button></div></div></div>
       
-      {!hasRealData && <DemoNotice message="These are demo stats — real data will appear as you refer users." />}
+      
       
       <div className={`${!hasRealData ? "opacity-60" : ""}`}>
         <div className="grid grid-cols-3 gap-4 mb-6">

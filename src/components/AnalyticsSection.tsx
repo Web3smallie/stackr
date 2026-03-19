@@ -1,7 +1,7 @@
 import { motion } from "framer-motion";
 import { BarChart3, TrendingUp, Eye, Users, Calendar, Globe } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
-import { DemoNotice, DemoWatermark } from "@/components/DemoBadge";
+import { DemoWatermark } from "@/components/DemoBadge";
 
 const tokenColors: Record<string, string> = {
   SOL: "bg-orange-500/20 text-orange-400 border-orange-500/30",
@@ -20,7 +20,7 @@ const AnalyticsSection = () => {
   return (
     <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }}>
       <div className="mb-6"><h2 className="font-display text-2xl font-bold text-foreground flex items-center gap-2"><BarChart3 className="w-6 h-6 text-primary" />Analytics</h2><p className="text-sm text-muted-foreground mt-1">Views, conversion, revenue, top supporters and token mix.</p></div>
-      {!hasRealData && <DemoNotice message="These are demo analytics — real data will appear as you receive activity." />}
+      
       
       <div className={`relative ${!hasRealData ? "opacity-70" : ""}`}>
         {!hasRealData && <DemoWatermark />}

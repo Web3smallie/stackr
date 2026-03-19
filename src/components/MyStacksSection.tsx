@@ -9,7 +9,7 @@ import { Switch } from "@/components/ui/switch";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "@/hooks/use-toast";
-import DemoBadge, { DemoNotice } from "@/components/DemoBadge";
+import DemoBadge from "@/components/DemoBadge";
 
 const tokenOptions = ["SOL", "USDC", "USDT", "BAGS"] as const;
 const tokenColors: Record<string, string> = {
@@ -140,7 +140,7 @@ const MyStacksSection = () => {
     img.src = `data:image/svg+xml;charset=utf-8,${encodeURIComponent(data)}`;
   };
 
-  const displayStacks: Stack[] = hasRealStacks ? stacks : [demoStack];
+  const displayStacks: Stack[] = hasRealStacks ? stacks : [demoStack as Stack];
 
   const handleDemoClick = () => {
     toast({ title: "This is a demo", description: "Create your own to get started!" });
@@ -156,7 +156,12 @@ const MyStacksSection = () => {
         <Button onClick={() => setShowCreate((v) => !v)}><Plus className="w-4 h-4 mr-1.5" />Create Payment Page</Button>
       </div>
 
-      {!hasRealStacks && !showCreate && <DemoNotice />}
+      {/* Green info banner — My Stacks only */}
+      {!hasRealStacks && !showCreate && (
+        <div className="rounded-xl border-l-4 border-green-500 bg-green-500/10 px-4 py-3 mb-4">
+          <p className="text-sm text-green-400">We have provided a demo in each section to help new users navigate the app with ease 😊</p>
+        </div>
+      )}
 
       {showCreate && (
         <div className="rounded-2xl border border-primary/30 bg-card p-6 mb-6 relative overflow-hidden">
@@ -194,15 +199,6 @@ const MyStacksSection = () => {
         </div>
       )}
 
-      {/* Empty state */}
-      {!loading && stacks.length === 0 && !showCreate && (
-        <div className="text-center py-12">
-          <Link2 className="w-12 h-12 text-muted-foreground mx-auto mb-4 opacity-40" />
-          <h3 className="font-display text-lg font-semibold text-foreground mb-2">No payment pages yet</h3>
-          <p className="text-sm text-muted-foreground mb-6">Create your first Stack to start receiving payments.</p>
-          <Button onClick={() => setShowCreate(true)}><Plus className="w-4 h-4 mr-1.5" />Create Your First Stack</Button>
-        </div>
-      )}
 
       <div className="space-y-4">
         {displayStacks.map((stack) => {
