@@ -57,47 +57,20 @@ const sidebarLinks = [
   { icon: Settings, label: "Settings", section: "settings" },
 ];
 
-const demoVaults = [
-  {
-    vault_name: "New MacBook Pro",
-    vault_purpose: "For coding & design work",
-    vault_target: 10,
-    vault_target_token: "SOL" as const,
-    current_amount: 7.3,
-    vault_progress_percentage: 73,
-    vault_notes: "Almost there, just a few more tips!",
-    unlock_date: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString(),
-    is_locked: true,
-    is_completed: false,
-    allow_contributions: true,
-  },
-  {
-    vault_name: "Emergency Fund",
-    vault_purpose: "Safety net savings",
-    vault_target: 500,
-    vault_target_token: "USDC" as const,
-    current_amount: 125,
-    vault_progress_percentage: 25,
-    vault_notes: null,
-    unlock_date: new Date(Date.now() + 180 * 24 * 60 * 60 * 1000).toISOString(),
-    is_locked: true,
-    is_completed: false,
-    allow_contributions: false,
-  },
-  {
-    vault_name: "Holiday Trip",
-    vault_purpose: "Bali 2026 🌴",
-    vault_target: 2000,
-    vault_target_token: "USDT" as const,
-    current_amount: 1850,
-    vault_progress_percentage: 92.5,
-    vault_notes: "So close to the beach!",
-    unlock_date: new Date(Date.now() + 14 * 24 * 60 * 60 * 1000).toISOString(),
-    is_locked: true,
-    is_completed: false,
-    allow_contributions: true,
-  },
-];
+const demoVault = {
+  vault_name: "New MacBook Pro",
+  vault_purpose: "For coding & design work",
+  vault_target: 10,
+  vault_target_token: "SOL" as const,
+  current_amount: 7.3,
+  vault_progress_percentage: 73,
+  vault_notes: "Almost there, just a few more tips!",
+  unlock_date: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString(),
+  is_locked: true,
+  is_completed: false,
+  allow_contributions: true,
+  isDemo: true,
+};
 
 const container = {
   hidden: { opacity: 0 },
