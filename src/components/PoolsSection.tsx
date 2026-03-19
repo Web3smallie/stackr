@@ -64,7 +64,7 @@ type ViewMode = "active" | "create" | "join" | "voting";
 
 const PoolsSection = () => {
   const [view, setView] = useState<ViewMode>("active");
-  const [pools, setPools] = useState<DemoPool[]>(initialPools);
+  const [pools, setPools] = useState<DemoPool[]>([]);
   const [selectedPoolId, setSelectedPoolId] = useState<string | null>(null);
   const [detailsPool, setDetailsPool] = useState<DemoPool | null>(null);
   const [joinAmounts, setJoinAmounts] = useState<Record<string, string>>({});
