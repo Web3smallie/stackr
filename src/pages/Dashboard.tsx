@@ -320,6 +320,9 @@ const Dashboard = () => {
               </motion.div>
             )}
 
+            {/* Pools Section */}
+            {activeSection === "pools" && <PoolsSection />}
+
             {/* Stacks Section (placeholder) */}
             {activeSection === "stacks" && (
               <motion.div variants={item}>
