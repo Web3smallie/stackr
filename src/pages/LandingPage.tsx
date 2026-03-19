@@ -4,13 +4,11 @@ import {
   ArrowRight,
   Zap,
   Globe,
-  Shield,
   Lock,
   Target,
   BarChart3,
   RefreshCw,
   Wallet,
-  Sparkles,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useNavigate } from "react-router-dom";
