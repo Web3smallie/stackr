@@ -219,6 +219,64 @@ const LandingPage = () => {
         </div>
       </motion.section>
 
+      {/* Three Ways to Stack */}
+      <section className="py-24 px-6">
+        <div className="max-w-6xl mx-auto">
+          <motion.div
+            className="text-center mb-16"
+            initial={{ opacity: 0, y: 12 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true }}
+            transition={{ duration: 0.5 }}
+          >
+            <h2 className="font-display text-3xl sm:text-4xl font-bold text-foreground mb-3">
+              Three Ways to Stack
+            </h2>
+            <p className="text-muted-foreground max-w-lg mx-auto">
+              Pay, save, and invest — all on Solana. Pick your play.
+            </p>
+          </motion.div>
+          <motion.div
+            className="grid md:grid-cols-3 gap-6"
+            variants={container}
+            initial="hidden"
+            whileInView="show"
+            viewport={{ once: true }}
+          >
+            {products.map((product) => (
+              <motion.div
+                key={product.name}
+                variants={item}
+                className="relative border border-border/50 rounded-xl p-8 bg-card/40 glass hover:-translate-y-1 hover:glow-card transition-all duration-300 ease-out group"
+              >
+                <div className="w-12 h-12 rounded-xl gradient-primary flex items-center justify-center mb-5">
+                  <product.icon className="w-6 h-6 text-primary-foreground" />
+                </div>
+                <h3 className="font-display text-xl font-bold text-foreground mb-2">
+                  {product.name}
+                </h3>
+                <p className="text-sm text-muted-foreground leading-relaxed mb-5">
+                  {product.description}
+                </p>
+                <div className="flex flex-wrap gap-2 mb-6">
+                  {product.tokens.map((token) => (
+                    <span
+                      key={token.name}
+                      className={`px-2.5 py-1 rounded-full text-xs font-semibold border ${token.color}`}
+                    >
+                      {token.name}
+                    </span>
+                  ))}
+                </div>
+                <Button variant="ghost" size="sm" className="text-accent hover:text-foreground p-0 h-auto">
+                  Learn More <ArrowRight className="w-3.5 h-3.5 ml-1" />
+                </Button>
+              </motion.div>
+            ))}
+          </motion.div>
+        </div>
+      </section>
+
       {/* Live Payment Feed (floating cards) */}
       <section className="pb-16 px-6 overflow-hidden">
         <div className="max-w-4xl mx-auto">
