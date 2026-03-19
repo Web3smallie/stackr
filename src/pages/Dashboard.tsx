@@ -1,4 +1,5 @@
 import { motion } from "framer-motion";
+import RpcStatusIndicator from "@/components/RpcStatusIndicator";
 import {
   LayoutDashboard,
   Link2,
@@ -402,6 +403,8 @@ const Dashboard = () => {
         </div>
         <div className="px-3">
           <div className="ledger-divider mb-4" />
+          <RpcStatusIndicator />
+          <div className="mt-3" />
           <WalletButton />
         </div>
       </aside>
