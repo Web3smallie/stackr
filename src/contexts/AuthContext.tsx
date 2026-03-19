@@ -40,11 +40,13 @@ const AuthContext = createContext<AuthContextType>({
 export const useAuth = () => useContext(AuthContext);
 
 function truncateWallet(address: string) {
-  return `${address.slice(0, 4)}...${address.slice(-2)}`;
+  if (!address) return "";
+  return `${address.slice(0, 4)}...${address.slice(-4)}`;
 }
 
 function generateAnonUsername(address: string) {
-  return `Anon${address.slice(0, 2)}${address.slice(-2)}`;
+  const clean = address.replace(/[^a-zA-Z0-9]/g, "");
+  return `Anon${clean.slice(0, 2)}${clean.slice(-2)}`;
 }
 
 export const AuthProvider = ({ children }: { children: ReactNode }) => {
@@ -58,11 +60,13 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const fetchUser = useCallback(async () => {
     if (!walletAddress) {
       setUser(null);
+      setIsNewUser(false);
       setLoading(false);
       return;
     }
 
     setLoading(true);
+
     const { data, error } = await supabase
       .from("users")
       .select("*")
@@ -71,6 +75,8 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
     if (error) {
       console.error("Error fetching user:", error);
+      setUser(null);
+      setIsNewUser(false);
       setLoading(false);
       return;
     }
@@ -79,9 +85,10 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       setUser(data as UserProfile);
       setIsNewUser(false);
     } else {
-      setIsNewUser(true);
       setUser(null);
+      setIsNewUser(true);
     }
+
     setLoading(false);
   }, [walletAddress]);
 
@@ -91,12 +98,13 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
   useEffect(() => {
     if (connected && walletAddress) {
-      fetchUser();
-    } else {
-      setUser(null);
-      setIsNewUser(false);
-      setLoading(false);
+      void fetchUser();
+      return;
     }
+
+    setUser(null);
+    setIsNewUser(false);
+    setLoading(false);
   }, [connected, walletAddress, fetchUser]);
 
   return (

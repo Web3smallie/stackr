@@ -1,19 +1,33 @@
 import { motion } from "framer-motion";
 import {
-  LayoutDashboard, Link2, ArrowDownUp, Settings, Vault, Shield,
-  Users, EyeOff, Target, Lock, BarChart3, Gift, Wallet, Eye,
+  LayoutDashboard,
+  Link2,
+  ArrowDownUp,
+  Settings,
+  Vault,
+  Shield,
+  Users,
+  EyeOff,
+  Target,
+  Lock,
+  BarChart3,
+  Gift,
+  Wallet,
+  Eye,
+  Plus,
+  Sparkles,
 } from "lucide-react";
-import { Button } from "@/components/ui/button";
-import { useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { useAuth, truncateWallet } from "@/contexts/AuthContext";
 import { useWallet } from "@solana/wallet-adapter-react";
 import { useWalletModal } from "@solana/wallet-adapter-react-ui";
+import { Button } from "@/components/ui/button";
+import { Switch } from "@/components/ui/switch";
+import DashboardHome from "@/components/DashboardHome";
 import WalletButton from "@/components/WalletButton";
 import VaultCard from "@/components/VaultCard";
 import OnboardingModal from "@/components/OnboardingModal";
 import PoolsSection from "@/components/PoolsSection";
-import DashboardHome from "@/components/DashboardHome";
 import MyStacksSection from "@/components/MyStacksSection";
 import TransactionsSection from "@/components/TransactionsSection";
 import SettingsSection from "@/components/SettingsSection";
@@ -21,8 +35,10 @@ import FundraisingSection from "@/components/FundraisingSection";
 import TokenGatesSection from "@/components/TokenGatesSection";
 import ReferralsSection from "@/components/ReferralsSection";
 import AnalyticsSection from "@/components/AnalyticsSection";
-import { Switch } from "@/components/ui/switch";
-import { Plus } from "lucide-react";
+import { useAuth, truncateWallet } from "@/contexts/AuthContext";
+import { supabase } from "@/integrations/supabase/client";
+import { Input } from "@/components/ui/input";
+import { toast } from "@/hooks/use-toast";
 
 const sidebarLinks = [
   { icon: LayoutDashboard, label: "Dashboard", section: "dashboard" },
@@ -39,16 +55,52 @@ const sidebarLinks = [
 ];
 
 const demoVaults = [
-  { vault_name: "New MacBook Pro", vault_purpose: "For coding & design work", vault_target: 10, vault_target_token: "SOL" as const, current_amount: 7.3, vault_progress_percentage: 73, vault_notes: "Almost there, just a few more tips!", unlock_date: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString(), is_locked: true, is_completed: false, allow_contributions: true },
-  { vault_name: "Emergency Fund", vault_purpose: "Safety net savings", vault_target: 500, vault_target_token: "USDC" as const, current_amount: 125, vault_progress_percentage: 25, vault_notes: null, unlock_date: new Date(Date.now() + 180 * 24 * 60 * 60 * 1000).toISOString(), is_locked: true, is_completed: false, allow_contributions: false },
-  { vault_name: "Holiday Trip", vault_purpose: "Bali 2026 🌴", vault_target: 2000, vault_target_token: "USDT" as const, current_amount: 1850, vault_progress_percentage: 92.5, vault_notes: "So close to the beach!", unlock_date: new Date(Date.now() + 14 * 24 * 60 * 60 * 1000).toISOString(), is_locked: true, is_completed: false, allow_contributions: true },
-  { vault_name: "Bags Token Stack", vault_purpose: "Long-term BAGS hold", vault_target: 10000, vault_target_token: "BAGS" as const, current_amount: 5200, vault_progress_percentage: 52, vault_notes: null, unlock_date: new Date(Date.now() + 365 * 24 * 60 * 60 * 1000).toISOString(), is_locked: true, is_completed: false, allow_contributions: false },
+  {
+    vault_name: "New MacBook Pro",
+    vault_purpose: "For coding & design work",
+    vault_target: 10,
+    vault_target_token: "SOL" as const,
+    current_amount: 7.3,
+    vault_progress_percentage: 73,
+    vault_notes: "Almost there, just a few more tips!",
+    unlock_date: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString(),
+    is_locked: true,
+    is_completed: false,
+    allow_contributions: true,
+  },
+  {
+    vault_name: "Emergency Fund",
+    vault_purpose: "Safety net savings",
+    vault_target: 500,
+    vault_target_token: "USDC" as const,
+    current_amount: 125,
+    vault_progress_percentage: 25,
+    vault_notes: null,
+    unlock_date: new Date(Date.now() + 180 * 24 * 60 * 60 * 1000).toISOString(),
+    is_locked: true,
+    is_completed: false,
+    allow_contributions: false,
+  },
+  {
+    vault_name: "Holiday Trip",
+    vault_purpose: "Bali 2026 🌴",
+    vault_target: 2000,
+    vault_target_token: "USDT" as const,
+    current_amount: 1850,
+    vault_progress_percentage: 92.5,
+    vault_notes: "So close to the beach!",
+    unlock_date: new Date(Date.now() + 14 * 24 * 60 * 60 * 1000).toISOString(),
+    is_locked: true,
+    is_completed: false,
+    allow_contributions: true,
+  },
 ];
 
 const container = {
   hidden: { opacity: 0 },
   show: { opacity: 1, transition: { staggerChildren: 0.05 } },
 };
+
 const item = {
   hidden: { opacity: 0, y: 10 },
   show: { opacity: 1, y: 0, transition: { duration: 0.4, ease: [0.16, 1, 0.3, 1] as [number, number, number, number] } },
@@ -56,46 +108,132 @@ const item = {
 
 const Dashboard = () => {
   const navigate = useNavigate();
-  const { user } = useAuth();
-  const { connected, publicKey } = useWallet();
+  const { user, refreshUser, loading, isNewUser } = useAuth();
+  const { connected, publicKey, signMessage } = useWallet();
   const { setVisible } = useWalletModal();
-  const [activeSection, setActiveSection] = useState("dashboard");
 
-  const [showEarnings, setShowEarnings] = useState(user?.show_earnings ?? false);
-  const [showSupporterCount, setShowSupporterCount] = useState(user?.show_supporter_count ?? false);
-  const [showPaymentHistory, setShowPaymentHistory] = useState(user?.show_payment_history ?? false);
-  const [showProfilePhoto, setShowProfilePhoto] = useState(user?.show_profile_photo ?? true);
+  const [activeSection, setActiveSection] = useState("dashboard");
+  const [signatureVerified, setSignatureVerified] = useState(false);
+  const [verifying, setVerifying] = useState(false);
+  const [showCreateVault, setShowCreateVault] = useState(false);
+  const [vaultForm, setVaultForm] = useState({ name: "", purpose: "", target: "", token: "SOL", unlockDate: "", allowContributions: false });
+  const [privacySaving, setPrivacySaving] = useState(false);
+  const [privacyState, setPrivacyState] = useState({
+    anonymous: false,
+    showEarnings: false,
+    showSupporters: false,
+    showPayments: false,
+    showPhoto: true,
+  });
+
+  useEffect(() => {
+    setSignatureVerified(false);
+  }, [publicKey?.toBase58()]);
+
+  useEffect(() => {
+    if (!user) return;
+    setPrivacyState({
+      anonymous: user.is_anonymous,
+      showEarnings: user.show_earnings,
+      showSupporters: user.show_supporter_count,
+      showPayments: user.show_payment_history,
+      showPhoto: user.show_profile_photo,
+    });
+  }, [user]);
+
+  const welcomeLabel = useMemo(() => {
+    const wallet = publicKey?.toBase58() || "";
+    if (user?.is_anonymous) return truncateWallet(wallet);
+    return user?.display_name || user?.username || truncateWallet(wallet);
+  }, [publicKey, user]);
+
+  const handleSignatureVerify = async () => {
+    if (!publicKey || !signMessage) {
+      toast({ title: "Wallet signature unavailable", description: "Please use a wallet that supports message signing.", variant: "destructive" });
+      return;
+    }
+
+    try {
+      setVerifying(true);
+      const message = "Sign this message to verify you own this wallet and log into Stackr — this does not cost any gas fees.";
+      await signMessage(new TextEncoder().encode(message));
+      setSignatureVerified(true);
+      await refreshUser();
+      toast({ title: "Wallet verified", description: "You’re now signed into Stackr." });
+    } catch (error) {
+      toast({ title: "Signature required", description: "You need to sign the message to continue.", variant: "destructive" });
+    } finally {
+      setVerifying(false);
+    }
+  };
+
+  const updatePrivacy = async (changes: Partial<typeof privacyState>) => {
+    if (!user) return;
+
+    const next = { ...privacyState, ...changes };
+    setPrivacyState(next);
+    setPrivacySaving(true);
+
+    const { error } = await supabase
+      .from("users")
+      .update({
+        is_anonymous: next.anonymous,
+        privacy_mode: next.anonymous,
+        show_earnings: next.showEarnings,
+        show_supporter_count: next.showSupporters,
+        show_payment_history: next.showPayments,
+        show_profile_photo: next.anonymous ? false : next.showPhoto,
+        display_name: next.anonymous ? truncateWallet(publicKey?.toBase58() || user.wallet_address) : user.display_name,
+      })
+      .eq("id", user.id);
+
+    if (error) {
+      toast({ title: "Could not update privacy", description: error.message, variant: "destructive" });
+      setPrivacyState({
+        anonymous: user.is_anonymous,
+        showEarnings: user.show_earnings,
+        showSupporters: user.show_supporter_count,
+        showPayments: user.show_payment_history,
+        showPhoto: user.show_profile_photo,
+      });
+    } else {
+      await refreshUser();
+      toast({ title: next.anonymous ? "Anonymous mode enabled" : "Privacy updated" });
+    }
+
+    setPrivacySaving(false);
+  };
+
+  const createVault = () => {
+    toast({ title: "Vault created", description: `${vaultForm.name || "New vault"} is ready.` });
+    setShowCreateVault(false);
+    setVaultForm({ name: "", purpose: "", target: "", token: "SOL", unlockDate: "", allowContributions: false });
+  };
 
   if (!connected) {
     return (
       <div className="min-h-screen gradient-bg flex items-center justify-center p-4">
-        <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="text-center max-w-lg">
-          <div className="w-20 h-20 rounded-2xl gradient-primary flex items-center justify-center mx-auto mb-8">
+        <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="w-full max-w-xl rounded-[2rem] border border-primary/25 bg-card p-8 text-center shadow-[0_0_50px_hsl(var(--primary)/0.18)]">
+          <div className="w-20 h-20 rounded-3xl gradient-primary flex items-center justify-center mx-auto mb-8 shadow-[0_0_36px_hsl(var(--primary)/0.28)]">
             <Wallet className="w-10 h-10 text-primary-foreground" />
           </div>
-          <h1 className="font-display text-4xl font-bold text-foreground mb-3">Connect Your Wallet</h1>
-          <p className="text-muted-foreground mb-8 max-w-sm mx-auto">
-            Connect any Solana wallet to access your STACKR dashboard. Supports Phantom, Backpack, Solflare, Coinbase & more.
+          <h1 className="font-display text-4xl font-bold text-foreground mb-3">Connect your wallet</h1>
+          <p className="text-muted-foreground mb-8 max-w-md mx-auto">
+            Connect any supported Solana wallet to open your Stackr dashboard, then verify ownership with a gasless signature.
           </p>
 
           <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 max-w-md mx-auto mb-8">
-            {[
-              { name: "Phantom", color: "from-purple-500 to-purple-700" },
-              { name: "Backpack", color: "from-blue-500 to-blue-700" },
-              { name: "Solflare", color: "from-orange-500 to-orange-700" },
-              { name: "Coinbase", color: "from-blue-400 to-blue-600" },
-              { name: "Bags", color: "from-purple-400 to-purple-600" },
-              { name: "More...", color: "from-gray-500 to-gray-700" },
-            ].map(wallet => (
+            {["Phantom", "Backpack", "Solflare", "Coinbase", "Bags", "More"] .map((wallet) => (
               <button
-                key={wallet.name}
+                key={wallet}
+                type="button"
                 onClick={() => setVisible(true)}
-                className="rounded-xl border border-border bg-card p-4 hover:border-primary/40 hover:glow-card transition-all flex flex-col items-center gap-2 group"
+                className="rounded-2xl border border-primary/20 bg-secondary/70 p-4 hover:border-primary/50 hover:shadow-[0_0_24px_hsl(var(--primary)/0.18)] transition-all flex flex-col items-center gap-2"
               >
-                <div className={`w-10 h-10 rounded-xl bg-gradient-to-br ${wallet.color} flex items-center justify-center text-primary-foreground font-bold text-sm`}>
-                  {wallet.name[0]}
+                <div className="w-10 h-10 rounded-2xl gradient-primary flex items-center justify-center text-primary-foreground font-bold text-sm">
+                  {wallet[0]}
                 </div>
-                <span className="text-xs font-medium text-muted-foreground group-hover:text-foreground transition-colors">{wallet.name}</span>
+                <span className="text-xs font-medium text-foreground">{wallet}</span>
               </button>
             ))}
           </div>
@@ -104,10 +242,32 @@ const Dashboard = () => {
             <Wallet className="w-5 h-5 mr-2" />
             Connect Wallet
           </Button>
+        </motion.div>
+      </div>
+    );
+  }
 
-          <p className="text-xs text-muted-foreground mt-6">
-            After connecting, you'll be asked to sign a message to verify ownership. This does not cost any gas fees.
+  if (!signatureVerified) {
+    return (
+      <div className="min-h-screen gradient-bg flex items-center justify-center p-4">
+        <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="w-full max-w-2xl rounded-[2rem] border border-primary/25 bg-card p-8 md:p-10 shadow-[0_0_50px_hsl(var(--primary)/0.18)]">
+          <div className="w-16 h-16 rounded-3xl gradient-primary flex items-center justify-center mb-6 shadow-[0_0_28px_hsl(var(--primary)/0.28)]">
+            <Sparkles className="w-8 h-8 text-primary-foreground" />
+          </div>
+          <h1 className="font-display text-4xl font-bold text-foreground mb-4">Verify your wallet</h1>
+          <p className="text-base text-muted-foreground max-w-xl leading-relaxed mb-6">
+            Sign this message to verify you own this wallet and log into Stackr — this does not cost any gas fees.
           </p>
+          <div className="rounded-2xl border border-primary/20 bg-secondary/70 p-4 mb-6">
+            <p className="text-xs uppercase tracking-[0.22em] text-muted-foreground mb-1">Connected wallet</p>
+            <p className="text-sm font-mono text-foreground break-all">{publicKey?.toBase58()}</p>
+          </div>
+          <div className="flex flex-wrap gap-3">
+            <Button size="lg" onClick={() => void handleSignatureVerify()} disabled={verifying || loading}>
+              {verifying ? "Waiting for signature..." : "Sign message"}
+            </Button>
+            <Button variant="ghost" size="lg" onClick={() => navigate("/")}>Back to landing</Button>
+          </div>
         </motion.div>
       </div>
     );
@@ -115,16 +275,57 @@ const Dashboard = () => {
 
   return (
     <div className="min-h-screen bg-background flex">
-      <OnboardingModal />
+      <OnboardingModal canShow={signatureVerified} />
 
-      {/* Sidebar */}
+      {showCreateVault && (
+        <div className="fixed inset-0 z-40 flex items-center justify-center bg-background/80 backdrop-blur-sm p-4">
+          <div className="w-full max-w-xl rounded-3xl border border-primary/30 bg-card p-6 shadow-[0_0_40px_hsl(var(--primary)/0.2)]">
+            <div className="flex items-center justify-between mb-5">
+              <div>
+                <h3 className="font-display text-2xl font-bold text-foreground">Create new vault</h3>
+                <p className="text-sm text-muted-foreground mt-1">Lock funds behind a goal and unlock date.</p>
+              </div>
+              <Button variant="ghost" size="sm" onClick={() => setShowCreateVault(false)}>Close</Button>
+            </div>
+            <div className="grid sm:grid-cols-2 gap-4 mb-4">
+              <Input placeholder="Vault name" value={vaultForm.name} onChange={(e) => setVaultForm({ ...vaultForm, name: e.target.value })} className="bg-secondary border-border" />
+              <Input placeholder="Purpose" value={vaultForm.purpose} onChange={(e) => setVaultForm({ ...vaultForm, purpose: e.target.value })} className="bg-secondary border-border" />
+              <Input placeholder="Target amount" type="number" value={vaultForm.target} onChange={(e) => setVaultForm({ ...vaultForm, target: e.target.value })} className="bg-secondary border-border" />
+              <Input placeholder="Token (SOL/USDC/USDT/BAGS)" value={vaultForm.token} onChange={(e) => setVaultForm({ ...vaultForm, token: e.target.value })} className="bg-secondary border-border" />
+              <Input type="date" value={vaultForm.unlockDate} onChange={(e) => setVaultForm({ ...vaultForm, unlockDate: e.target.value })} className="bg-secondary border-border sm:col-span-2" />
+            </div>
+            <div className="flex items-center justify-between rounded-2xl border border-border bg-secondary/60 p-4 mb-4">
+              <div>
+                <p className="text-sm font-medium text-foreground">Allow contributions</p>
+                <p className="text-xs text-muted-foreground">Let supporters deposit into this vault.</p>
+              </div>
+              <Switch checked={vaultForm.allowContributions} onCheckedChange={(checked) => setVaultForm({ ...vaultForm, allowContributions: checked })} />
+            </div>
+            <div className="flex gap-3">
+              <Button variant="ghost" className="flex-1" onClick={() => setShowCreateVault(false)}>Cancel</Button>
+              <Button className="flex-1" onClick={createVault} disabled={!vaultForm.name || !vaultForm.target}>Create Vault</Button>
+            </div>
+          </div>
+        </div>
+      )}
+
       <aside className="hidden md:flex w-60 border-r border-border flex-col justify-between py-6 px-4 bg-background fixed h-screen overflow-y-auto">
         <div>
           <span className="font-display text-xl font-bold text-foreground px-3 cursor-pointer" onClick={() => navigate("/")}>STACKR</span>
           <nav className="mt-8 flex flex-col gap-1">
-            {sidebarLinks.map(link => (
-              <button key={link.label} onClick={() => setActiveSection(link.section)} className={`flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-colors duration-200 ${activeSection === link.section ? "bg-secondary text-foreground" : "text-muted-foreground hover:text-foreground hover:bg-secondary"}`}>
-                <link.icon className="w-4 h-4" />{link.label}
+            {sidebarLinks.map((link) => (
+              <button
+                key={link.label}
+                type="button"
+                onClick={() => setActiveSection(link.section)}
+                className={`flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-colors duration-200 ${
+                  activeSection === link.section
+                    ? "bg-primary text-primary-foreground shadow-[0_0_24px_hsl(var(--primary)/0.18)]"
+                    : "text-muted-foreground hover:text-foreground hover:bg-secondary"
+                }`}
+              >
+                <link.icon className="w-4 h-4" />
+                {link.label}
               </button>
             ))}
           </nav>
@@ -135,22 +336,22 @@ const Dashboard = () => {
         </div>
       </aside>
 
-      {/* Main */}
       <main className="flex-1 md:ml-60">
         <header className="border-b border-border px-6 md:px-8 h-16 flex items-center justify-between sticky top-0 bg-background/80 backdrop-blur-sm z-10">
           <span className="md:hidden font-display text-lg font-bold text-foreground cursor-pointer" onClick={() => navigate("/")}>STACKR</span>
           <div className="hidden md:block" />
           <div className="flex items-center gap-3">
             {user?.is_anonymous && (
-              <span className="text-xs px-2 py-0.5 rounded-full bg-accent/10 text-accent flex items-center gap-1">
-                <EyeOff className="w-3 h-3" />Anonymous
+              <span className="text-xs px-2 py-0.5 rounded-full bg-primary/15 text-accent flex items-center gap-1 border border-primary/20">
+                <EyeOff className="w-3 h-3" />
+                Anonymous
               </span>
             )}
             <WalletButton />
           </div>
         </header>
 
-        <div className="p-6 md:p-8 max-w-5xl">
+        <div className="p-6 md:p-8 max-w-6xl">
           <motion.div variants={container} initial="hidden" animate="show">
             {activeSection === "dashboard" && <DashboardHome onNavigate={setActiveSection} />}
             {activeSection === "stacks" && <MyStacksSection />}
@@ -161,10 +362,12 @@ const Dashboard = () => {
                     <h2 className="font-display text-2xl font-bold text-foreground">My Vaults</h2>
                     <p className="text-sm text-muted-foreground mt-1">Lock your crypto until your goal date</p>
                   </div>
-                  <Button><Plus className="w-4 h-4 mr-1.5" />New Vault</Button>
+                  <Button onClick={() => setShowCreateVault(true)}><Plus className="w-4 h-4 mr-1.5" />New Vault</Button>
                 </div>
                 <div className="grid sm:grid-cols-2 gap-4">
-                  {demoVaults.map((vault, i) => <VaultCard key={i} vault={vault} />)}
+                  {demoVaults.map((vault, i) => (
+                    <VaultCard key={i} vault={vault} />
+                  ))}
                 </div>
               </motion.div>
             )}
@@ -178,28 +381,31 @@ const Dashboard = () => {
               <motion.div variants={item}>
                 <div className="mb-6">
                   <h2 className="font-display text-2xl font-bold text-foreground flex items-center gap-2"><Shield className="w-6 h-6 text-primary" />Privacy Settings</h2>
-                  <p className="text-sm text-muted-foreground mt-1">Control what others can see about you</p>
+                  <p className="text-sm text-muted-foreground mt-1">Control what the public can see about you.</p>
                 </div>
-                <div className="space-y-4 max-w-lg">
+                <div className="space-y-4 max-w-2xl">
                   {[
-                    { label: "Show Earnings", desc: "Display total earnings on your profile", checked: showEarnings, onChange: setShowEarnings },
-                    { label: "Show Supporter Count", desc: "Display number of supporters", checked: showSupporterCount, onChange: setShowSupporterCount },
-                    { label: "Show Payment History", desc: "Allow others to see your payment history", checked: showPaymentHistory, onChange: setShowPaymentHistory },
-                    { label: "Show Profile Photo", desc: "Display your avatar on your profile", checked: showProfilePhoto, onChange: setShowProfilePhoto },
-                  ].map(s => (
-                    <div key={s.label} className="rounded-xl border border-border bg-card p-5">
-                      <div className="flex items-center justify-between mb-1">
-                        <div className="flex items-center gap-3"><Eye className="w-4 h-4 text-muted-foreground" /><span className="text-sm font-medium text-foreground">{s.label}</span></div>
-                        <Switch checked={s.checked} onCheckedChange={s.onChange} />
+                    { label: "Anonymous Mode", desc: "Immediately hide your personal details and show only your truncated wallet.", checked: privacyState.anonymous, onChange: (checked: boolean) => void updatePrivacy({ anonymous: checked }) },
+                    { label: "Show Earnings", desc: "Display total earnings on your public profile.", checked: privacyState.showEarnings, onChange: (checked: boolean) => void updatePrivacy({ showEarnings: checked }) },
+                    { label: "Show Supporter Count", desc: "Display number of supporters.", checked: privacyState.showSupporters, onChange: (checked: boolean) => void updatePrivacy({ showSupporters: checked }) },
+                    { label: "Show Payment History", desc: "Allow others to see your payment history.", checked: privacyState.showPayments, onChange: (checked: boolean) => void updatePrivacy({ showPayments: checked }) },
+                    { label: "Show Profile Photo", desc: "Display your avatar on your profile.", checked: privacyState.showPhoto, onChange: (checked: boolean) => void updatePrivacy({ showPhoto: checked }) },
+                  ].map((setting) => (
+                    <div key={setting.label} className="rounded-2xl border border-border bg-card p-5 shadow-[0_0_24px_hsl(var(--primary)/0.08)]">
+                      <div className="flex items-center justify-between mb-1 gap-4">
+                        <div className="flex items-center gap-3">
+                          <Eye className="w-4 h-4 text-primary" />
+                          <span className="text-sm font-medium text-foreground">{setting.label}</span>
+                        </div>
+                        <Switch checked={setting.checked} onCheckedChange={setting.onChange} disabled={privacySaving} />
                       </div>
-                      <p className="text-xs text-muted-foreground ml-7">{s.desc}</p>
+                      <p className="text-xs text-muted-foreground ml-7">{setting.desc}</p>
                     </div>
                   ))}
-                  <div className="rounded-xl border border-primary/30 bg-primary/5 p-5">
-                    <div className="flex items-center gap-3 mb-2"><Lock className="w-4 h-4 text-primary" /><span className="text-sm font-semibold text-foreground">Anonymous Mode</span></div>
-                    <p className="text-xs text-muted-foreground mb-3">When enabled, only your truncated wallet address is shown.</p>
-                    <Switch checked={user?.is_anonymous ?? false} disabled />
-                    <p className="text-xs text-muted-foreground mt-1 italic">Toggle in Settings</p>
+                  <div className="rounded-2xl border border-primary/25 bg-card p-5">
+                    <p className="text-xs uppercase tracking-[0.24em] text-muted-foreground mb-2">Current public identity</p>
+                    <p className="text-sm text-foreground font-medium">{welcomeLabel}</p>
+                    <p className="text-xs text-muted-foreground mt-1">{privacyState.anonymous ? "Anonymous mode is active." : "Profile mode is active."}</p>
                   </div>
                 </div>
               </motion.div>

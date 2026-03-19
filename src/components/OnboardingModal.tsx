@@ -1,36 +1,45 @@
 import { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
+import { User, EyeOff, ShieldCheck } from "lucide-react";
 import { useWallet } from "@solana/wallet-adapter-react";
-import { User, EyeOff } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth, truncateWallet, generateAnonUsername } from "@/contexts/AuthContext";
-import { useNavigate } from "react-router-dom";
+import { toast } from "@/hooks/use-toast";
 
-const OnboardingModal = () => {
+interface OnboardingModalProps {
+  canShow: boolean;
+}
+
+const OnboardingModal = ({ canShow }: OnboardingModalProps) => {
   const { publicKey } = useWallet();
   const { isNewUser, setIsNewUser, refreshUser } = useAuth();
-  const navigate = useNavigate();
   const [step, setStep] = useState<"choice" | "profile">("choice");
   const [username, setUsername] = useState("");
   const [displayName, setDisplayName] = useState("");
   const [bio, setBio] = useState("");
+  const [twitter, setTwitter] = useState("");
+  const [avatarUrl, setAvatarUrl] = useState("");
   const [saving, setSaving] = useState(false);
 
   const walletAddress = publicKey?.toBase58() || "";
 
-  if (!isNewUser) return null;
+  if (!isNewUser || !canShow) return null;
 
   const createProfile = async (anonymous: boolean) => {
-    setSaving(true);
-    const anonUsername = generateAnonUsername(walletAddress);
+    if (!walletAddress) return;
 
+    setSaving(true);
+
+    const anonUsername = generateAnonUsername(walletAddress);
     const profileData = {
       wallet_address: walletAddress,
       username: anonymous ? anonUsername : username || anonUsername,
       display_name: anonymous ? truncateWallet(walletAddress) : displayName || null,
       bio: anonymous ? null : bio || null,
+      avatar_url: anonymous ? null : avatarUrl || null,
+      twitter_handle: anonymous ? null : twitter || null,
       is_anonymous: anonymous,
       privacy_mode: anonymous,
       show_earnings: false,
@@ -42,7 +51,7 @@ const OnboardingModal = () => {
     const { error } = await supabase.from("users").insert(profileData);
 
     if (error) {
-      console.error("Error creating profile:", error);
+      toast({ title: "Could not create profile", description: error.message, variant: "destructive" });
       setSaving(false);
       return;
     }
@@ -50,7 +59,7 @@ const OnboardingModal = () => {
     await refreshUser();
     setIsNewUser(false);
     setSaving(false);
-    navigate("/dashboard");
+    toast({ title: anonymous ? "Anonymous mode enabled" : "Profile created" });
   };
 
   return (
@@ -62,95 +71,72 @@ const OnboardingModal = () => {
         className="fixed inset-0 z-50 flex items-center justify-center bg-background/80 backdrop-blur-sm p-4"
       >
         <motion.div
-          initial={{ scale: 0.9, opacity: 0 }}
-          animate={{ scale: 1, opacity: 1 }}
-          exit={{ scale: 0.9, opacity: 0 }}
-          className="w-full max-w-md rounded-2xl border border-border bg-card p-8 shadow-2xl"
+          initial={{ scale: 0.96, opacity: 0, y: 10 }}
+          animate={{ scale: 1, opacity: 1, y: 0 }}
+          exit={{ scale: 0.96, opacity: 0, y: 10 }}
+          className="w-full max-w-lg rounded-3xl border border-primary/30 bg-card p-8 shadow-[0_0_40px_hsl(var(--primary)/0.22)]"
         >
           <div className="text-center mb-6">
-            <h2 className="font-display text-2xl font-bold text-foreground mb-2">
-              Welcome to STACKR
-            </h2>
-            <p className="text-sm text-muted-foreground">
-              Wallet connected: <span className="font-mono text-accent">{truncateWallet(walletAddress)}</span>
+            <div className="w-14 h-14 mx-auto mb-4 rounded-2xl gradient-primary flex items-center justify-center shadow-[0_0_30px_hsl(var(--primary)/0.28)]">
+              <ShieldCheck className="w-7 h-7 text-primary-foreground" />
+            </div>
+            <h2 className="font-display text-3xl font-bold text-foreground">Welcome to Stackr</h2>
+            <p className="text-sm text-muted-foreground mt-2">
+              Wallet verified: <span className="font-mono text-accent">{truncateWallet(walletAddress)}</span>
             </p>
           </div>
 
           {step === "choice" ? (
             <div className="space-y-4">
-              <p className="text-sm text-muted-foreground text-center mb-6">
-                How would you like to appear on STACKR?
-              </p>
+              <p className="text-sm text-muted-foreground text-center">Choose how you want to appear across the app.</p>
 
               <button
+                type="button"
                 onClick={() => setStep("profile")}
-                className="w-full flex items-center gap-4 p-4 rounded-xl border border-border bg-secondary/50 hover:bg-secondary hover:border-primary/50 transition-all group"
+                className="w-full rounded-2xl border border-primary/20 bg-secondary/70 p-5 text-left transition-all hover:border-primary/50 hover:bg-secondary"
               >
-                <div className="w-12 h-12 rounded-full bg-primary/20 flex items-center justify-center group-hover:bg-primary/30 transition-colors">
-                  <User className="w-6 h-6 text-primary" />
-                </div>
-                <div className="text-left">
-                  <p className="text-sm font-semibold text-foreground">Set up full profile</p>
-                  <p className="text-xs text-muted-foreground">Username, display name, bio & photo</p>
+                <div className="flex items-center gap-4">
+                  <div className="w-12 h-12 rounded-2xl bg-primary/20 flex items-center justify-center">
+                    <User className="w-6 h-6 text-primary" />
+                  </div>
+                  <div>
+                    <p className="text-base font-semibold text-foreground">Set up full profile</p>
+                    <p className="text-xs text-muted-foreground">Username, display name, bio, photo and X handle.</p>
+                  </div>
                 </div>
               </button>
 
               <button
-                onClick={() => createProfile(true)}
+                type="button"
+                onClick={() => void createProfile(true)}
                 disabled={saving}
-                className="w-full flex items-center gap-4 p-4 rounded-xl border border-border bg-secondary/50 hover:bg-secondary hover:border-accent/50 transition-all group"
+                className="w-full rounded-2xl border border-primary/20 bg-secondary/70 p-5 text-left transition-all hover:border-primary/50 hover:bg-secondary disabled:opacity-60"
               >
-                <div className="w-12 h-12 rounded-full bg-accent/20 flex items-center justify-center group-hover:bg-accent/30 transition-colors">
-                  <EyeOff className="w-6 h-6 text-accent" />
-                </div>
-                <div className="text-left">
-                  <p className="text-sm font-semibold text-foreground">
-                    {saving ? "Creating..." : "Stay Anonymous"}
-                  </p>
-                  <p className="text-xs text-muted-foreground">
-                    Only your wallet ({truncateWallet(walletAddress)}) will be shown
-                  </p>
+                <div className="flex items-center gap-4">
+                  <div className="w-12 h-12 rounded-2xl bg-primary/15 flex items-center justify-center">
+                    <EyeOff className="w-6 h-6 text-accent" />
+                  </div>
+                  <div>
+                    <p className="text-base font-semibold text-foreground">Stay anonymous</p>
+                    <p className="text-xs text-muted-foreground">Only show {truncateWallet(walletAddress)} and a generated Anon username.</p>
+                  </div>
                 </div>
               </button>
             </div>
           ) : (
-            <motion.div
-              initial={{ opacity: 0, x: 20 }}
-              animate={{ opacity: 1, x: 0 }}
-              className="space-y-4"
-            >
-              <Input
-                placeholder="Username (e.g. cryptodev)"
-                value={username}
-                onChange={(e) => setUsername(e.target.value)}
-              />
-              <Input
-                placeholder="Display name"
-                value={displayName}
-                onChange={(e) => setDisplayName(e.target.value)}
-              />
-              <Input
-                placeholder="Bio (optional)"
-                value={bio}
-                onChange={(e) => setBio(e.target.value)}
-              />
+            <div className="space-y-4">
+              <Input placeholder="Username" value={username} onChange={(e) => setUsername(e.target.value)} className="bg-secondary border-border" />
+              <Input placeholder="Display name" value={displayName} onChange={(e) => setDisplayName(e.target.value)} className="bg-secondary border-border" />
+              <Input placeholder="Bio" value={bio} onChange={(e) => setBio(e.target.value)} className="bg-secondary border-border" />
+              <Input placeholder="Profile photo URL" value={avatarUrl} onChange={(e) => setAvatarUrl(e.target.value)} className="bg-secondary border-border" />
+              <Input placeholder="X / Twitter handle" value={twitter} onChange={(e) => setTwitter(e.target.value)} className="bg-secondary border-border" />
               <div className="flex gap-3 pt-2">
-                <Button
-                  variant="outline"
-                  className="flex-1"
-                  onClick={() => setStep("choice")}
-                >
-                  Back
-                </Button>
-                <Button
-                  className="flex-1"
-                  disabled={!username || saving}
-                  onClick={() => createProfile(false)}
-                >
+                <Button variant="ghost" className="flex-1" onClick={() => setStep("choice")}>Back</Button>
+                <Button className="flex-1" disabled={!username || saving} onClick={() => void createProfile(false)}>
                   {saving ? "Creating..." : "Create Profile"}
                 </Button>
               </div>
-            </motion.div>
+            </div>
           )}
         </motion.div>
       </motion.div>
