@@ -1,7 +1,7 @@
 import { motion } from "framer-motion";
 import { ArrowDownUp, ExternalLink, ArrowDownLeft, ArrowUpRight, RefreshCw, Vault } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
-import DemoBadge, { DemoNotice } from "@/components/DemoBadge";
+import DemoBadge from "@/components/DemoBadge";
 
 const tokenColors: Record<string, string> = {
   SOL: "bg-orange-500/20 text-orange-400 border-orange-500/30",
