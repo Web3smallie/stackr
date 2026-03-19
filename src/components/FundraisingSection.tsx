@@ -94,7 +94,7 @@ const FundraisingSection = () => {
         <Button onClick={() => setShowCreate((v) => !v)}><Plus className="w-4 h-4 mr-1.5" />Create Goal</Button>
       </motion.div>
 
-      {!hasReal && !showCreate && <DemoNotice />}
+      
 
       {showCreate && (
         <motion.div variants={item} className="rounded-2xl border border-primary/30 bg-card p-6 mb-6 relative overflow-hidden">

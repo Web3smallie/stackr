@@ -199,15 +199,6 @@ const MyStacksSection = () => {
         </div>
       )}
 
-      {/* Empty state */}
-      {!loading && stacks.length === 0 && !showCreate && (
-        <div className="text-center py-12">
-          <Link2 className="w-12 h-12 text-muted-foreground mx-auto mb-4 opacity-40" />
-          <h3 className="font-display text-lg font-semibold text-foreground mb-2">No payment pages yet</h3>
-          <p className="text-sm text-muted-foreground mb-6">Create your first Stack to start receiving payments.</p>
-          <Button onClick={() => setShowCreate(true)}><Plus className="w-4 h-4 mr-1.5" />Create Your First Stack</Button>
-        </div>
-      )}
 
       <div className="space-y-4">
         {displayStacks.map((stack) => {

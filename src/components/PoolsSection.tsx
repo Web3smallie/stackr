@@ -300,7 +300,7 @@ const PoolsSection = () => {
       {(view === "active" || view === "voting") && (
         <>
           <h3 className="font-display text-lg font-bold text-foreground mb-4 flex items-center gap-2"><BarChart3 className="w-5 h-5 text-primary" />My Active Pools</h3>
-          {pools.length === 0 && <DemoNotice />}
+          
           {filteredPools.length === 0 && searchQuery && (
             <p className="text-sm text-muted-foreground text-center py-8">No pools found matching "{searchQuery}"</p>
           )}

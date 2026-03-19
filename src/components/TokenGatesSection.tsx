@@ -80,7 +80,7 @@ const TokenGatesSection = () => {
         <Button onClick={() => setShowCreate((v) => !v)}><Plus className="w-4 h-4 mr-1.5" />Create Gate</Button>
       </div>
 
-      {!hasReal && !showCreate && <DemoNotice />}
+      
 
       {showCreate && (
         <div className="rounded-2xl border border-primary/30 bg-card p-6 mb-6 relative overflow-hidden">

@@ -415,10 +415,6 @@ const Dashboard = () => {
                   </div>
                   <Button onClick={() => setShowCreateVault(true)}><Plus className="w-4 h-4 mr-1.5" />New Vault</Button>
                 </div>
-                {/* Demo notice when no real vaults */}
-                <div className="rounded-xl border border-amber-500/20 bg-amber-500/5 px-4 py-2.5 mb-4">
-                  <p className="text-xs text-amber-400/80">This is a demo — create your own to get started!</p>
-                </div>
                 <div className="grid sm:grid-cols-2 gap-4">
                   <div className="opacity-60 relative">
                     <div className="absolute top-3 right-3 z-20">
