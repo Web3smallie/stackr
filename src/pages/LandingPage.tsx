@@ -58,6 +58,42 @@ const features = [
   },
 ];
 
+const products = [
+  {
+    icon: CreditCard,
+    name: "Stackr Pay",
+    description: "Instant crypto payments for creators and anyone who needs to get paid. Send a link, get paid in seconds.",
+    tokens: [
+      { name: "SOL", color: "bg-orange-500/20 text-orange-400 border-orange-500/30" },
+      { name: "USDC", color: "bg-blue-500/20 text-blue-400 border-blue-500/30" },
+      { name: "USDT", color: "bg-green-500/20 text-green-400 border-green-500/30" },
+      { name: "Bags", color: "bg-purple-500/20 text-purple-400 border-purple-500/30" },
+    ],
+  },
+  {
+    icon: Vault,
+    name: "Stackr Vault",
+    description: "Locked savings goals like PiggyVest. Lock your crypto until your goal date. Build discipline, stack harder.",
+    tokens: [
+      { name: "SOL", color: "bg-orange-500/20 text-orange-400 border-orange-500/30" },
+      { name: "USDC", color: "bg-blue-500/20 text-blue-400 border-blue-500/30" },
+      { name: "USDT", color: "bg-green-500/20 text-green-400 border-green-500/30" },
+      { name: "Bags", color: "bg-purple-500/20 text-purple-400 border-purple-500/30" },
+    ],
+  },
+  {
+    icon: Users,
+    name: "Stackr Pool",
+    description: "Community investment pools like mutual funds. Pool money together, vote on Bags tokens, share profits.",
+    tokens: [
+      { name: "SOL", color: "bg-orange-500/20 text-orange-400 border-orange-500/30" },
+      { name: "USDC", color: "bg-blue-500/20 text-blue-400 border-blue-500/30" },
+      { name: "USDT", color: "bg-green-500/20 text-green-400 border-green-500/30" },
+      { name: "Bags", color: "bg-purple-500/20 text-purple-400 border-purple-500/30" },
+    ],
+  },
+];
+
 const steps = [
   {
     step: "01",
