@@ -43,6 +43,7 @@ interface DemoPool {
   my_share?: number;
   is_active: boolean;
   votes?: VoteItem[];
+  isDemo?: boolean;
 }
 
 const demoPool: DemoPool = {
