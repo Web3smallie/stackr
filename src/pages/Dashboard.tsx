@@ -1,4 +1,5 @@
 import { motion } from "framer-motion";
+import RpcStatusIndicator from "@/components/RpcStatusIndicator";
 import {
   LayoutDashboard,
   Link2,
