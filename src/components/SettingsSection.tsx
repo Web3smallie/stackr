@@ -1,6 +1,17 @@
 import { useEffect, useState } from "react";
 import { motion } from "framer-motion";
-import { Settings, User, Camera, Trash2, AlertTriangle, Bell, Loader2 } from "lucide-react";
+import { Settings, User, Camera, Trash2, Bell, Loader2 } from "lucide-react";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Switch } from "@/components/ui/switch";
@@ -159,36 +170,34 @@ const SettingsSection = () => {
           {saving ? <><Loader2 className="w-4 h-4 mr-2 animate-spin" />Saving...</> : "Save Changes"}
         </Button>
 
-        {/* Danger Zone */}
-        <div className="rounded-2xl border border-destructive/30 bg-destructive/5 p-6">
-          <h3 className="font-display text-base font-semibold text-foreground mb-2 flex items-center gap-2">
-            <AlertTriangle className="w-4 h-4 text-destructive" />Danger Zone
-          </h3>
-          <p className="text-xs text-muted-foreground mb-4">Delete your account and clear your Stackr profile.</p>
-          {!showDanger ? (
+        {/* Delete Account */}
+        <AlertDialog>
+          <AlertDialogTrigger asChild>
             <button
               type="button"
-              onClick={() => setShowDanger(true)}
-              className="inline-flex items-center gap-2 rounded-lg px-4 py-2 text-sm font-medium bg-destructive text-destructive-foreground hover:bg-destructive/90 transition-colors"
+              className="w-full inline-flex items-center justify-center gap-2 rounded-lg px-4 py-2.5 text-sm font-medium bg-destructive text-destructive-foreground hover:bg-destructive/90 transition-colors"
             >
               <Trash2 className="w-4 h-4" />Delete Account
             </button>
-          ) : (
-            <div className="space-y-3">
-              <p className="text-sm text-foreground">Are you sure? This action cannot be undone.</p>
-              <div className="flex gap-2">
-                <button
-                  type="button"
-                  onClick={() => toast({ title: "Account deletion is not yet available.", variant: "destructive" })}
-                  className="flex-1 inline-flex items-center justify-center rounded-lg px-4 py-2 text-sm font-medium bg-destructive text-destructive-foreground hover:bg-destructive/90 transition-colors"
-                >
-                  Confirm Delete
-                </button>
-                <Button variant="ghost" className="flex-1" onClick={() => setShowDanger(false)}>Cancel</Button>
-              </div>
-            </div>
-          )}
-        </div>
+          </AlertDialogTrigger>
+          <AlertDialogContent className="bg-card border-border">
+            <AlertDialogHeader>
+              <AlertDialogTitle className="text-foreground">Delete Account</AlertDialogTitle>
+              <AlertDialogDescription>
+                Are you sure you want to delete your Stackr account? This action cannot be undone.
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter>
+              <AlertDialogCancel className="bg-secondary text-foreground border-border hover:bg-secondary/80">Cancel</AlertDialogCancel>
+              <AlertDialogAction
+                className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                onClick={() => toast({ title: "Account deletion is not yet available.", variant: "destructive" })}
+              >
+                Delete
+              </AlertDialogAction>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
       </div>
     </motion.div>
   );
