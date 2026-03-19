@@ -300,16 +300,25 @@ const PoolsSection = () => {
       {(view === "active" || view === "voting") && (
         <>
           <h3 className="font-display text-lg font-bold text-foreground mb-4 flex items-center gap-2"><BarChart3 className="w-5 h-5 text-primary" />My Active Pools</h3>
-          {filteredPools.length === 0 && (
+          {pools.length === 0 && <DemoNotice />}
+          {filteredPools.length === 0 && searchQuery && (
             <p className="text-sm text-muted-foreground text-center py-8">No pools found matching "{searchQuery}"</p>
           )}
           <div className="grid sm:grid-cols-2 gap-4">
-            {filteredPools.map((pool) => (
-              <motion.div key={pool.id} initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="rounded-2xl border border-border bg-card p-6 relative overflow-hidden">
+            {(pools.length > 0 ? filteredPools : [demoPool]).map((pool) => {
+              const isDemo = !!pool.isDemo;
+              return (
+              <motion.div key={pool.id} initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className={`rounded-2xl border border-border bg-card p-6 relative overflow-hidden ${isDemo ? "opacity-60" : ""}`}>
                 <div className="absolute inset-0 bg-gradient-to-br from-primary/5 via-transparent to-accent/5 opacity-70" />
                 <div className="relative z-10">
                   <div className="flex items-start justify-between mb-3">
-                    <div><h4 className="font-display text-base font-bold text-foreground">{pool.name}</h4><p className="text-xs text-muted-foreground mt-0.5">{pool.description}</p></div>
+                    <div>
+                      <div className="flex items-center gap-2">
+                        <h4 className="font-display text-base font-bold text-foreground">{pool.name}</h4>
+                        {isDemo && <DemoBadge />}
+                      </div>
+                      <p className="text-xs text-muted-foreground mt-0.5">{pool.description}</p>
+                    </div>
                     <Badge variant="outline" className={`text-xs border ${tokenColors[pool.token]}`}>{pool.token}</Badge>
                   </div>
                   <div className="grid grid-cols-2 gap-3 mb-4">
@@ -319,20 +328,17 @@ const PoolsSection = () => {
                     <div className="rounded-xl bg-secondary p-3"><p className="text-[10px] text-muted-foreground uppercase tracking-wider">Members</p><p className="text-sm font-bold text-foreground flex items-center gap-1"><Users className="w-3 h-3 text-muted-foreground" />{pool.member_count}</p></div>
                   </div>
                   <div className="flex flex-wrap gap-2 mb-4">{pool.target_tokens.map((token) => <Badge key={token} variant="outline" className={`text-[10px] border ${tokenColors[token]}`}>{token}</Badge>)}</div>
-                  <div className="flex gap-2">
-                    <Button size="sm" className="flex-1" onClick={() => { setSelectedPoolId(pool.id); setView("voting"); }}><Vote className="w-4 h-4 mr-1" />Vote</Button>
-                    <Button size="sm" className="flex-1" onClick={() => setDetailsPool(pool)}><TrendingUp className="w-4 h-4 mr-1" />Details</Button>
-                    <button
-                      type="button"
-                      onClick={() => setConfirmLeaveId(pool.id)}
-                      className="inline-flex items-center justify-center gap-1 rounded-lg px-3 py-1.5 text-xs font-medium bg-destructive text-destructive-foreground hover:bg-destructive/90 transition-colors"
-                    >
-                      <LogOut className="w-3 h-3" />Leave
-                    </button>
-                  </div>
+                  {!isDemo && (
+                    <div className="flex gap-2">
+                      <Button size="sm" className="flex-1" onClick={() => { setSelectedPoolId(pool.id); setView("voting"); }}><Vote className="w-4 h-4 mr-1" />Vote</Button>
+                      <Button size="sm" className="flex-1" onClick={() => setDetailsPool(pool)}><TrendingUp className="w-4 h-4 mr-1" />Details</Button>
+                      <button type="button" onClick={() => setConfirmLeaveId(pool.id)} className="inline-flex items-center justify-center gap-1 rounded-lg px-3 py-1.5 text-xs font-medium bg-destructive text-destructive-foreground hover:bg-destructive/90 transition-colors"><LogOut className="w-3 h-3" />Leave</button>
+                    </div>
+                  )}
                 </div>
               </motion.div>
-            ))}
+              );
+            })}
           </div>
         </>
       )}
