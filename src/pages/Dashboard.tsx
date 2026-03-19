@@ -9,29 +9,87 @@ import {
   Copy,
   ExternalLink,
   Wallet,
+  Vault,
+  Shield,
+  Eye,
+  EyeOff,
+  Lock,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
+import { useAuth, truncateWallet } from "@/contexts/AuthContext";
+import { useWallet } from "@solana/wallet-adapter-react";
+import { useWalletModal } from "@solana/wallet-adapter-react-ui";
+import WalletButton from "@/components/WalletButton";
+import VaultCard from "@/components/VaultCard";
+import OnboardingModal from "@/components/OnboardingModal";
+import { Switch } from "@/components/ui/switch";
+import { supabase } from "@/integrations/supabase/client";
 
 const sidebarLinks = [
-  { icon: LayoutDashboard, label: "Dashboard", active: true },
-  { icon: Link2, label: "My Stacks" },
-  { icon: ArrowDownUp, label: "Transactions" },
-  { icon: Settings, label: "Settings" },
+  { icon: LayoutDashboard, label: "Dashboard", section: "dashboard" },
+  { icon: Link2, label: "My Stacks", section: "stacks" },
+  { icon: Vault, label: "My Vaults", section: "vaults" },
+  { icon: ArrowDownUp, label: "Transactions", section: "transactions" },
+  { icon: Shield, label: "Privacy", section: "privacy" },
+  { icon: Settings, label: "Settings", section: "settings" },
 ];
 
-const transactions = [
-  { id: 1, from: "@bags_user", amount: "4.20", currency: "SOL", time: "2 mins ago", status: "success" as const },
-  { id: 2, from: "@cryptodev", amount: "12.50", currency: "USDC", time: "15 mins ago", status: "success" as const },
-  { id: 3, from: "@nft_queen", amount: "1.00", currency: "SOL", time: "1 hour ago", status: "pending" as const },
-  { id: 4, from: "@web3_builder", amount: "25.00", currency: "USDC", time: "3 hours ago", status: "success" as const },
-  { id: 5, from: "@solana_fan", amount: "0.50", currency: "SOL", time: "5 hours ago", status: "success" as const },
-];
-
-const stacks = [
-  { id: 1, name: "Tips", description: "General tips", earned: "42.50", currency: "SOL", link: "stackr.fm/tips" },
-  { id: 2, name: "Commissions", description: "Design work", earned: "180.00", currency: "USDC", link: "stackr.fm/commissions" },
+// Demo vaults for showcase
+const demoVaults = [
+  {
+    vault_name: "New MacBook Pro",
+    vault_purpose: "For coding & design work",
+    vault_target: 10,
+    vault_target_token: "SOL" as const,
+    current_amount: 7.3,
+    vault_progress_percentage: 73,
+    vault_notes: "Almost there, just a few more tips!",
+    unlock_date: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString(),
+    is_locked: true,
+    is_completed: false,
+    allow_contributions: true,
+  },
+  {
+    vault_name: "Emergency Fund",
+    vault_purpose: "Safety net savings",
+    vault_target: 500,
+    vault_target_token: "USDC" as const,
+    current_amount: 125,
+    vault_progress_percentage: 25,
+    vault_notes: null,
+    unlock_date: new Date(Date.now() + 180 * 24 * 60 * 60 * 1000).toISOString(),
+    is_locked: true,
+    is_completed: false,
+    allow_contributions: false,
+  },
+  {
+    vault_name: "Holiday Trip",
+    vault_purpose: "Bali 2026 🌴",
+    vault_target: 2000,
+    vault_target_token: "USDT" as const,
+    current_amount: 1850,
+    vault_progress_percentage: 92.5,
+    vault_notes: "So close to the beach!",
+    unlock_date: new Date(Date.now() + 14 * 24 * 60 * 60 * 1000).toISOString(),
+    is_locked: true,
+    is_completed: false,
+    allow_contributions: true,
+  },
+  {
+    vault_name: "Bags Token Stack",
+    vault_purpose: "Long-term BAGS hold",
+    vault_target: 10000,
+    vault_target_token: "BAGS" as const,
+    current_amount: 5200,
+    vault_progress_percentage: 52,
+    vault_notes: null,
+    unlock_date: new Date(Date.now() + 365 * 24 * 60 * 60 * 1000).toISOString(),
+    is_locked: true,
+    is_completed: false,
+    allow_contributions: false,
+  },
 ];
 
 const container = {
@@ -45,13 +103,52 @@ const item = {
 };
 
 const Dashboard = () => {
-  const [showCreate, setShowCreate] = useState(false);
-  const [stackName, setStackName] = useState("");
-  const [stackDesc, setStackDesc] = useState("");
   const navigate = useNavigate();
+  const { user, loading } = useAuth();
+  const { connected, publicKey } = useWallet();
+  const { setVisible } = useWalletModal();
+  const [activeSection, setActiveSection] = useState("dashboard");
+
+  // Privacy settings state
+  const [showEarnings, setShowEarnings] = useState(user?.show_earnings ?? false);
+  const [showSupporterCount, setShowSupporterCount] = useState(user?.show_supporter_count ?? false);
+  const [showPaymentHistory, setShowPaymentHistory] = useState(user?.show_payment_history ?? false);
+  const [showProfilePhoto, setShowProfilePhoto] = useState(user?.show_profile_photo ?? true);
+
+  if (!connected) {
+    return (
+      <div className="min-h-screen bg-background flex items-center justify-center">
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="text-center max-w-md"
+        >
+          <div className="w-16 h-16 rounded-2xl bg-primary/20 flex items-center justify-center mx-auto mb-6">
+            <Wallet className="w-8 h-8 text-primary" />
+          </div>
+          <h1 className="font-display text-3xl font-bold text-foreground mb-3">
+            Connect Your Wallet
+          </h1>
+          <p className="text-muted-foreground mb-8">
+            Connect any Solana wallet to access your STACKR dashboard.
+          </p>
+          <Button size="lg" onClick={() => setVisible(true)}>
+            <Wallet className="w-5 h-5 mr-2" />
+            Connect Wallet
+          </Button>
+        </motion.div>
+      </div>
+    );
+  }
+
+  const displayName = user?.is_anonymous
+    ? truncateWallet(publicKey?.toBase58() || "")
+    : user?.display_name || user?.username || truncateWallet(publicKey?.toBase58() || "");
 
   return (
     <div className="min-h-screen bg-background flex">
+      <OnboardingModal />
+
       {/* Sidebar */}
       <aside className="hidden md:flex w-60 border-r border-border flex-col justify-between py-6 px-4 bg-background fixed h-screen">
         <div>
@@ -65,8 +162,9 @@ const Dashboard = () => {
             {sidebarLinks.map((link) => (
               <button
                 key={link.label}
+                onClick={() => setActiveSection(link.section)}
                 className={`flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-colors duration-200 ${
-                  link.active
+                  activeSection === link.section
                     ? "bg-secondary text-foreground"
                     : "text-muted-foreground hover:text-foreground hover:bg-secondary"
                 }`}
@@ -79,10 +177,7 @@ const Dashboard = () => {
         </div>
         <div className="px-3">
           <div className="ledger-divider mb-4" />
-          <button className="flex items-center gap-3 text-sm text-muted-foreground hover:text-foreground transition-colors">
-            <LogOut className="w-4 h-4" />
-            Disconnect
-          </button>
+          <WalletButton />
         </div>
       </aside>
 
@@ -90,153 +185,167 @@ const Dashboard = () => {
       <main className="flex-1 md:ml-60">
         {/* Top Bar */}
         <header className="border-b border-border px-6 md:px-8 h-16 flex items-center justify-between sticky top-0 bg-background/80 backdrop-blur-sm z-10">
-          <span className="md:hidden font-display text-lg font-bold text-foreground" onClick={() => navigate("/")}>STACKR</span>
+          <span className="md:hidden font-display text-lg font-bold text-foreground cursor-pointer" onClick={() => navigate("/")}>STACKR</span>
           <div className="hidden md:block" />
           <div className="flex items-center gap-3">
-            <span className="text-xs text-muted-foreground hidden sm:inline">@creator_handle</span>
-            <Button variant="wallet" size="sm">
-              <Wallet className="w-4 h-4 mr-1" />
-              7xK...4mD
-            </Button>
+            {user?.is_anonymous && (
+              <span className="text-xs px-2 py-0.5 rounded-full bg-accent/10 text-accent flex items-center gap-1">
+                <EyeOff className="w-3 h-3" />
+                Anonymous
+              </span>
+            )}
+            <WalletButton />
           </div>
         </header>
 
         <div className="p-6 md:p-8 max-w-5xl">
           <motion.div variants={container} initial="hidden" animate="show">
-            {/* Balance Section */}
-            <motion.div variants={item} className="mb-8">
-              <p className="text-sm text-muted-foreground mb-1">Total Earnings</p>
-              <div className="flex items-baseline gap-3">
-                <span className="font-display text-6xl font-bold text-foreground tabular-nums">
-                  43.20
-                </span>
-                <span className="text-xl text-muted-foreground font-medium">SOL</span>
-              </div>
-              <p className="text-sm text-muted-foreground mt-1 tabular-nums">≈ $6,912.00 USD</p>
-            </motion.div>
 
-            <div className="ledger-divider mb-8" />
-
-            {/* My Stacks */}
-            <motion.div variants={item} className="mb-8">
-              <div className="flex items-center justify-between mb-4">
-                <h2 className="font-display text-lg font-semibold text-foreground">My Stacks</h2>
-                <Button size="sm" onClick={() => setShowCreate(!showCreate)}>
-                  <Plus className="w-4 h-4 mr-1" />
-                  New Stack
-                </Button>
-              </div>
-
-              {/* Create Stack Form */}
-              {showCreate && (
-                <motion.div
-                  initial={{ opacity: 0, height: 0 }}
-                  animate={{ opacity: 1, height: "auto" }}
-                  exit={{ opacity: 0, height: 0 }}
-                  className="border border-border rounded-xl p-5 mb-4 bg-card"
-                >
-                  <h3 className="font-display text-sm font-semibold text-foreground mb-4">Create Payment Link</h3>
-                  <div className="space-y-3">
-                    <input
-                      type="text"
-                      placeholder="Stack name (e.g. Tips)"
-                      value={stackName}
-                      onChange={(e) => setStackName(e.target.value)}
-                      className="w-full px-3 py-2.5 rounded-lg border border-border bg-background text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring"
-                    />
-                    <input
-                      type="text"
-                      placeholder="Description (optional)"
-                      value={stackDesc}
-                      onChange={(e) => setStackDesc(e.target.value)}
-                      className="w-full px-3 py-2.5 rounded-lg border border-border bg-background text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring"
-                    />
-                    <div className="flex gap-2">
-                      <Button size="sm" onClick={() => setShowCreate(false)}>Create Stack</Button>
-                      <Button variant="ghost" size="sm" onClick={() => setShowCreate(false)}>Cancel</Button>
-                    </div>
-                  </div>
-                </motion.div>
-              )}
-
-              {/* Stack Cards */}
-              <div className="grid sm:grid-cols-2 gap-4">
-                {stacks.map((stack) => (
-                  <div
-                    key={stack.id}
-                    className="border border-border rounded-xl p-5 bg-card hover:-translate-y-0.5 hover:shadow-md transition-all duration-200 ease-out-expo cursor-pointer"
-                  >
-                    <div className="flex items-start justify-between mb-3">
-                      <div>
-                        <h4 className="font-display text-sm font-semibold text-foreground">{stack.name}</h4>
-                        <p className="text-xs text-muted-foreground">{stack.description}</p>
-                      </div>
-                      <div className="flex gap-1">
-                        <button className="p-1.5 rounded-md hover:bg-secondary transition-colors">
-                          <Copy className="w-3.5 h-3.5 text-muted-foreground" />
-                        </button>
-                        <button className="p-1.5 rounded-md hover:bg-secondary transition-colors">
-                          <ExternalLink className="w-3.5 h-3.5 text-muted-foreground" />
-                        </button>
-                      </div>
-                    </div>
-                    <div className="ledger-divider mb-3" />
-                    <div className="flex items-baseline gap-1.5">
-                      <span className="font-display text-2xl font-bold text-foreground tabular-nums">{stack.earned}</span>
-                      <span className="text-xs text-muted-foreground">{stack.currency}</span>
-                    </div>
-                    <p className="text-xs text-muted-foreground mt-1">{stack.link}</p>
-                  </div>
-                ))}
-              </div>
-
-              {stacks.length === 0 && (
-                <div className="border border-dashed border-border rounded-xl p-8 text-center">
-                  <p className="text-sm text-muted-foreground">No stacks yet. Create your first payment link to start earning.</p>
-                </div>
-              )}
-            </motion.div>
-
-            <div className="ledger-divider mb-8" />
-
-            {/* Recent Transactions */}
-            <motion.div variants={item}>
-              <h2 className="font-display text-lg font-semibold text-foreground mb-4">Recent Transactions</h2>
-              <div className="border border-border rounded-xl overflow-hidden bg-card">
-                {transactions.map((tx, i) => (
-                  <div
-                    key={tx.id}
-                    className={`flex items-center justify-between px-5 py-3.5 ${
-                      i < transactions.length - 1 ? "border-b border-border" : ""
-                    }`}
-                  >
-                    <div className="flex items-center gap-3">
-                      <div
-                        className={`w-2 h-2 rounded-full ${
-                          tx.status === "success" ? "bg-success" : "bg-pending animate-pulse-slow"
-                        }`}
-                      />
-                      <div>
-                        <p className="text-sm text-foreground">
-                          Received <span className="font-medium tabular-nums">{tx.amount} {tx.currency}</span> from{" "}
-                          <span className="font-medium">{tx.from}</span>
-                        </p>
-                        <p className="text-xs text-muted-foreground">{tx.time}</p>
-                      </div>
-                    </div>
-                    <span
-                      className={`text-xs font-medium px-2 py-0.5 rounded-md ${
-                        tx.status === "success"
-                          ? "bg-success/10 text-success"
-                          : "bg-pending/10 text-pending"
-                      }`}
-                    >
-                      {tx.status === "success" ? "Confirmed" : "Pending"}
+            {/* Dashboard Section */}
+            {activeSection === "dashboard" && (
+              <>
+                <motion.div variants={item} className="mb-8">
+                  <p className="text-sm text-muted-foreground mb-1">Welcome back, {displayName}</p>
+                  <div className="flex items-baseline gap-3">
+                    <span className="font-display text-6xl font-bold text-foreground tabular-nums">
+                      {showEarnings ? "43.20" : "••••"}
                     </span>
+                    <span className="text-xl text-muted-foreground font-medium">SOL</span>
                   </div>
-                ))}
-              </div>
-            </motion.div>
+                  {showEarnings && (
+                    <p className="text-sm text-muted-foreground mt-1 tabular-nums">≈ $6,912.00 USD</p>
+                  )}
+                </motion.div>
+                <div className="ledger-divider mb-8" />
+              </>
+            )}
+
+            {/* Vaults Section */}
+            {activeSection === "vaults" && (
+              <motion.div variants={item}>
+                <div className="flex items-center justify-between mb-6">
+                  <div>
+                    <h2 className="font-display text-2xl font-bold text-foreground">My Vaults</h2>
+                    <p className="text-sm text-muted-foreground mt-1">Lock your crypto until your goal date</p>
+                  </div>
+                  <Button>
+                    <Plus className="w-4 h-4 mr-1.5" />
+                    New Vault
+                  </Button>
+                </div>
+                <div className="grid sm:grid-cols-2 gap-4">
+                  {demoVaults.map((vault, i) => (
+                    <VaultCard key={i} vault={vault} />
+                  ))}
+                </div>
+              </motion.div>
+            )}
+
+            {/* Privacy Section */}
+            {activeSection === "privacy" && (
+              <motion.div variants={item}>
+                <div className="mb-6">
+                  <h2 className="font-display text-2xl font-bold text-foreground flex items-center gap-2">
+                    <Shield className="w-6 h-6 text-primary" />
+                    Privacy Settings
+                  </h2>
+                  <p className="text-sm text-muted-foreground mt-1">Control what others can see about you</p>
+                </div>
+
+                <div className="space-y-4 max-w-lg">
+                  <div className="rounded-xl border border-border bg-card p-5">
+                    <div className="flex items-center justify-between mb-1">
+                      <div className="flex items-center gap-3">
+                        <Eye className="w-4 h-4 text-muted-foreground" />
+                        <span className="text-sm font-medium text-foreground">Show Earnings</span>
+                      </div>
+                      <Switch checked={showEarnings} onCheckedChange={setShowEarnings} />
+                    </div>
+                    <p className="text-xs text-muted-foreground ml-7">Display total earnings on your profile</p>
+                  </div>
+
+                  <div className="rounded-xl border border-border bg-card p-5">
+                    <div className="flex items-center justify-between mb-1">
+                      <div className="flex items-center gap-3">
+                        <Eye className="w-4 h-4 text-muted-foreground" />
+                        <span className="text-sm font-medium text-foreground">Show Supporter Count</span>
+                      </div>
+                      <Switch checked={showSupporterCount} onCheckedChange={setShowSupporterCount} />
+                    </div>
+                    <p className="text-xs text-muted-foreground ml-7">Display number of supporters</p>
+                  </div>
+
+                  <div className="rounded-xl border border-border bg-card p-5">
+                    <div className="flex items-center justify-between mb-1">
+                      <div className="flex items-center gap-3">
+                        <Eye className="w-4 h-4 text-muted-foreground" />
+                        <span className="text-sm font-medium text-foreground">Show Payment History</span>
+                      </div>
+                      <Switch checked={showPaymentHistory} onCheckedChange={setShowPaymentHistory} />
+                    </div>
+                    <p className="text-xs text-muted-foreground ml-7">Allow others to see your payment history</p>
+                  </div>
+
+                  <div className="rounded-xl border border-border bg-card p-5">
+                    <div className="flex items-center justify-between mb-1">
+                      <div className="flex items-center gap-3">
+                        <Eye className="w-4 h-4 text-muted-foreground" />
+                        <span className="text-sm font-medium text-foreground">Show Profile Photo</span>
+                      </div>
+                      <Switch checked={showProfilePhoto} onCheckedChange={setShowProfilePhoto} />
+                    </div>
+                    <p className="text-xs text-muted-foreground ml-7">Display your avatar on your profile</p>
+                  </div>
+
+                  <div className="rounded-xl border border-primary/30 bg-primary/5 p-5">
+                    <div className="flex items-center gap-3 mb-2">
+                      <Lock className="w-4 h-4 text-primary" />
+                      <span className="text-sm font-semibold text-foreground">Anonymous Mode</span>
+                    </div>
+                    <p className="text-xs text-muted-foreground mb-3">
+                      When enabled, only your truncated wallet address is shown. All personal details are hidden.
+                    </p>
+                    <Switch
+                      checked={user?.is_anonymous ?? false}
+                      disabled
+                    />
+                    <p className="text-xs text-muted-foreground mt-1 italic">
+                      Toggle in Settings → Profile
+                    </p>
+                  </div>
+                </div>
+              </motion.div>
+            )}
+
+            {/* Stacks Section (placeholder) */}
+            {activeSection === "stacks" && (
+              <motion.div variants={item}>
+                <h2 className="font-display text-2xl font-bold text-foreground mb-4">My Stacks</h2>
+                <div className="border border-dashed border-border rounded-xl p-8 text-center">
+                  <p className="text-sm text-muted-foreground">Payment page management coming soon.</p>
+                </div>
+              </motion.div>
+            )}
+
+            {/* Transactions Section (placeholder) */}
+            {activeSection === "transactions" && (
+              <motion.div variants={item}>
+                <h2 className="font-display text-2xl font-bold text-foreground mb-4">Transactions</h2>
+                <div className="border border-dashed border-border rounded-xl p-8 text-center">
+                  <p className="text-sm text-muted-foreground">Transaction history coming soon.</p>
+                </div>
+              </motion.div>
+            )}
+
+            {/* Settings Section (placeholder) */}
+            {activeSection === "settings" && (
+              <motion.div variants={item}>
+                <h2 className="font-display text-2xl font-bold text-foreground mb-4">Settings</h2>
+                <div className="border border-dashed border-border rounded-xl p-8 text-center">
+                  <p className="text-sm text-muted-foreground">Account settings coming soon.</p>
+                </div>
+              </motion.div>
+            )}
           </motion.div>
         </div>
       </main>
