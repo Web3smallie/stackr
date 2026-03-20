@@ -88,6 +88,8 @@ const PaymentPage = () => {
 
   const finalAmount = selectedAmount ?? (customAmount ? Number(customAmount) : 0);
   const platformFee = finalAmount * 0.01;
+  const treasuryFee = finalAmount * 0.005;
+  const bagsFee = finalAmount * 0.005;
   const creatorAmount = finalAmount - platformFee;
 
   const handleConnectOrPay = useCallback(async () => {
