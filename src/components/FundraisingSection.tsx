@@ -169,7 +169,7 @@ const FundraisingSection = () => {
   const shareGoal = (goal: Goal) => {
     const slug = encodeURIComponent(goal.title.toLowerCase().replace(/\s+/g, "-"));
     const username = user?.username || user?.wallet_address?.slice(0, 8) || "user";
-    const link = `getstackr.app/${username}/fundraising/${slug}`;
+    const link = `${APP_DOMAIN}/${username}/fundraising/${slug}`;
     navigator.clipboard.writeText(link);
     toast({ title: "Link copied!", description: link });
   };
