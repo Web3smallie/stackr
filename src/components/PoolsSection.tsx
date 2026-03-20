@@ -236,9 +236,21 @@ const PoolsSection = () => {
 
       if (error) { toast({ title: "Could not join pool", description: error.message, variant: "destructive" }); return; }
 
+      // Register Bags fee sharing
+      const bagsResult = await registerBagsFeeSharing({
+        amount: amt, token: pool.token, fromWallet: user.wallet_address,
+        toWallet: treasuryWallet, transactionType: "pool_contribution",
+        transactionSignature: txSignature,
+      });
+
       markSectionUsed("pools");
       emitStackrDataChanged();
       await fetchPools();
+      toast({ title: "Pool joined!", description: `${amount} ${pool.token} committed to ${pool.name}.` });
+      if (bagsResult.success) {
+        toast({ title: "💼 Bags Fee Sharing", description: bagsResult.message });
+      }
+      setView("active");
       toast({ title: "Pool joined!", description: `${amount} ${pool.token} committed to ${pool.name}.` });
       setView("active");
     } catch (err: any) {
