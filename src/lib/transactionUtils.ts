@@ -1,22 +1,20 @@
 import { supabase } from "@/integrations/supabase/client";
 
+let cachedTreasury: string | null = null;
+
 /**
- * Fetches the treasury wallet address from the backend.
+ * Fetches the treasury wallet address from the backend (cached).
  */
 export async function getTreasuryWallet(): Promise<string> {
-  const { data, error } = await supabase.functions.invoke("solana-rpc-config");
-  if (error) throw new Error("Could not fetch RPC config");
-  // The treasury wallet is stored as a secret; fetch via process-payment edge function
-  // For now, use a dedicated call
-  const { data: paymentData } = await supabase.functions.invoke("process-payment", {
-    body: { amount: 0, token: "SOL", from_wallet: "query", to_wallet: "query", _get_config: true },
-  });
-  return paymentData?.transactionPlan?.treasuryWallet || "";
+  if (cachedTreasury) return cachedTreasury;
+  const { data, error } = await supabase.functions.invoke("get-treasury-wallet");
+  if (error || !data?.treasuryWallet) throw new Error("Could not fetch treasury wallet");
+  cachedTreasury = data.treasuryWallet;
+  return cachedTreasury!;
 }
 
 /**
  * Calls Bags API fee sharing after any successful transaction.
- * Returns the result for display purposes.
  */
 export async function registerBagsFeeSharing({
   amount,
