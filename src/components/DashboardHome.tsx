@@ -153,7 +153,7 @@ const DashboardHome = ({ onNavigate }: Props) => {
               <div className="p-6 text-center text-sm text-muted-foreground">No transactions yet</div>
             )}
             {displayTx.map((tx, i) => (
-              <div key={i} className={`flex items-center justify-between p-4 hover:bg-secondary/40 transition-colors ${realTx.length === 0 ? "opacity-60" : ""}`}>
+              <div key={i} className="flex items-center justify-between p-4 hover:bg-secondary/40 transition-colors">
                 <div className="flex items-center gap-3">
                   <div className="w-9 h-9 rounded-2xl bg-primary/15 flex items-center justify-center"><ArrowDownUp className="w-4 h-4 text-primary" /></div>
                   <div>
