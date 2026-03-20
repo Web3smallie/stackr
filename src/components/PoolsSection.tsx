@@ -14,6 +14,9 @@ import { supabase } from "@/integrations/supabase/client";
 import { emitStackrDataChanged, subscribeToStackrDataChanged } from "@/lib/dataSync";
 import { toast } from "@/hooks/use-toast";
 import { shouldShowDemo, markSectionUsed } from "@/lib/demoTracker";
+import { getTreasuryWallet, registerBagsFeeSharing } from "@/lib/transactionUtils";
+import { sendSolTransaction } from "@/lib/solanaTransaction";
+import { PublicKey } from "@solana/web3.js";
 
 const tokenColors: Record<string, string> = {
   SOL: "bg-orange-500/20 text-orange-400 border-orange-500/30",
