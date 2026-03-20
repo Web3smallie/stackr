@@ -213,7 +213,7 @@ const MyStacksSection = () => {
                   </div>
                   <Badge variant="outline" className="bg-primary/10 text-accent border-primary/20">Active</Badge>
                 </div>
-                <div className="flex items-center gap-2 mb-3 text-xs text-muted-foreground"><Link2 className="w-3 h-3" /><span className="font-mono">getstackr.app/{stack.slug}</span></div>
+                <div className="flex items-center gap-2 mb-3 text-xs text-muted-foreground"><Link2 className="w-3 h-3" /><span className="font-mono">{APP_DOMAIN}/{stack.slug}</span></div>
                 <div className="flex flex-wrap gap-1.5 mb-4">{stack.accepted_tokens.map((token) => <Badge key={token} variant="outline" className={`text-[10px] border ${tokenColors[token] || ""}`}>{token}</Badge>)}</div>
                 {!isDemo && (
                   <div className="flex flex-wrap gap-2">
