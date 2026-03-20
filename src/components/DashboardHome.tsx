@@ -95,9 +95,6 @@ const DashboardHome = ({ onNavigate }: Props) => {
   const score = user?.stackr_score ?? 0;
   const tier = getScoreTier(score);
 
-  // TODO: replace with real data queries
-  const hasRealTx = false;
-
   return (
     <>
       <motion.div variants={item} className="mb-8 rounded-3xl border border-primary/25 bg-card p-6 md:p-8 relative overflow-hidden shadow-[0_0_40px_hsl(var(--primary)/0.12)]">
