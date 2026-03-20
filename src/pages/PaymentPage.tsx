@@ -378,6 +378,18 @@ const PaymentPage = () => {
             </Link>
           </div>
         </div>
+        </div>
+
+        {/* Right: Jupiter Swap Widget */}
+        <div className="w-full lg:w-[420px] shrink-0">
+          <div className="text-center mb-4">
+            <p className="text-sm font-semibold text-foreground">Support the Bags.fm ecosystem</p>
+            <p className="text-xs text-muted-foreground mt-1">Swap here to pay with BAGS</p>
+          </div>
+          <div className="rounded-2xl border border-border bg-card shadow-xl overflow-hidden">
+            <div id="jupiter-terminal" className="min-h-[400px]" />
+          </div>
+        </div>
       </div>
     </div>
   );
