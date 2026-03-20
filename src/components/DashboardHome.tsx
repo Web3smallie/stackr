@@ -150,14 +150,17 @@ const DashboardHome = ({ onNavigate }: Props) => {
         </div>
         <div className="rounded-2xl border border-border bg-card overflow-hidden shadow-[0_0_24px_hsl(var(--primary)/0.08)]">
           <div className="divide-y divide-border">
-            {demoTransactions.map((tx, i) => (
-              <div key={i} className={`flex items-center justify-between p-4 hover:bg-secondary/40 transition-colors ${!hasRealTx ? "opacity-60" : ""}`}>
+            {displayTx.length === 0 && (
+              <div className="p-6 text-center text-sm text-muted-foreground">No transactions yet</div>
+            )}
+            {displayTx.map((tx, i) => (
+              <div key={i} className={`flex items-center justify-between p-4 hover:bg-secondary/40 transition-colors ${realTx.length === 0 ? "opacity-60" : ""}`}>
                 <div className="flex items-center gap-3">
                   <div className="w-9 h-9 rounded-2xl bg-primary/15 flex items-center justify-center"><ArrowDownUp className="w-4 h-4 text-primary" /></div>
                   <div>
                     <div className="flex items-center gap-2">
                       <p className="text-sm font-medium text-foreground">{tx.type}</p>
-                      {!hasRealTx && <DemoBadge />}
+                      {realTx.length === 0 && <DemoBadge />}
                     </div>
                     <p className="text-xs text-muted-foreground">From {tx.from}</p>
                   </div>
