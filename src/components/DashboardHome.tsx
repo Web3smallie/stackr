@@ -7,7 +7,10 @@ import { useAuth, truncateWallet } from "@/contexts/AuthContext";
 import { useWallet } from "@solana/wallet-adapter-react";
 import { Badge } from "@/components/ui/badge";
 import DemoBadge from "@/components/DemoBadge";
-
+import { supabase } from "@/integrations/supabase/client";
+import { useEffect, useState } from "react";
+import { shouldShowDemo } from "@/lib/demoTracker";
+import { formatDistanceToNow } from "date-fns";
 const item = {
   hidden: { opacity: 0, y: 10 },
   show: { opacity: 1, y: 0, transition: { duration: 0.4, ease: [0.16, 1, 0.3, 1] as [number, number, number, number] } },
@@ -28,19 +31,69 @@ const demoTransactions = [
   { type: "Pool Contribution", amount: "5 SOL", from: "Self", time: "3 days ago" },
 ];
 
+interface RecentTx {
+  type: string;
+  amount: string;
+  from: string;
+  time: string;
+}
+
 const DashboardHome = ({ onNavigate }: Props) => {
   const { user } = useAuth();
   const { publicKey } = useWallet();
+  const [realTx, setRealTx] = useState<RecentTx[]>([]);
 
+  const wallet = publicKey?.toBase58();
+
+  useEffect(() => {
+    if (!wallet) return;
+    const fetchTx = async () => {
+      const { data: payments } = await supabase
+        .from("payments")
+        .select("amount, token, from_wallet, created_at")
+        .or(`from_wallet.eq.${wallet},to_wallet.eq.${wallet}`)
+        .order("created_at", { ascending: false })
+        .limit(5);
+
+      const { data: deposits } = await supabase
+        .from("vault_deposits")
+        .select("amount, token, from_wallet, created_at")
+        .eq("from_wallet", wallet)
+        .order("created_at", { ascending: false })
+        .limit(5);
+
+      const items: RecentTx[] = [];
+      (payments ?? []).forEach((p) => {
+        const isIncoming = p.from_wallet !== wallet;
+        items.push({
+          type: isIncoming ? "Payment Received" : "Payment Sent",
+          amount: `${Number(p.amount).toFixed(2)} ${p.token}`,
+          from: isIncoming ? `${p.from_wallet.slice(0, 4)}...${p.from_wallet.slice(-3)}` : "Self",
+          time: formatDistanceToNow(new Date(p.created_at), { addSuffix: true }),
+        });
+      });
+      (deposits ?? []).forEach((d) => {
+        items.push({
+          type: "Vault Deposit",
+          amount: `${Number(d.amount).toFixed(2)} ${d.token}`,
+          from: "Self",
+          time: formatDistanceToNow(new Date(d.created_at), { addSuffix: true }),
+        });
+      });
+      items.sort((a, b) => 0); // already sorted by DB
+      setRealTx(items.slice(0, 5));
+    };
+    fetchTx();
+  }, [wallet]);
+
+  const showDemo = shouldShowDemo("transactions", realTx.length > 0);
+  const displayTx = realTx.length > 0 ? realTx : (showDemo ? demoTransactions : []);
   const displayName = user?.is_anonymous
     ? truncateWallet(publicKey?.toBase58() || "")
     : user?.display_name || user?.username || truncateWallet(publicKey?.toBase58() || "");
 
   const score = user?.stackr_score ?? 0;
   const tier = getScoreTier(score);
-
-  // TODO: replace with real data queries
-  const hasRealTx = false;
 
   return (
     <>
@@ -97,14 +150,17 @@ const DashboardHome = ({ onNavigate }: Props) => {
         </div>
         <div className="rounded-2xl border border-border bg-card overflow-hidden shadow-[0_0_24px_hsl(var(--primary)/0.08)]">
           <div className="divide-y divide-border">
-            {demoTransactions.map((tx, i) => (
-              <div key={i} className={`flex items-center justify-between p-4 hover:bg-secondary/40 transition-colors ${!hasRealTx ? "opacity-60" : ""}`}>
+            {displayTx.length === 0 && (
+              <div className="p-6 text-center text-sm text-muted-foreground">No transactions yet</div>
+            )}
+            {displayTx.map((tx, i) => (
+              <div key={i} className={`flex items-center justify-between p-4 hover:bg-secondary/40 transition-colors ${realTx.length === 0 ? "opacity-60" : ""}`}>
                 <div className="flex items-center gap-3">
                   <div className="w-9 h-9 rounded-2xl bg-primary/15 flex items-center justify-center"><ArrowDownUp className="w-4 h-4 text-primary" /></div>
                   <div>
                     <div className="flex items-center gap-2">
                       <p className="text-sm font-medium text-foreground">{tx.type}</p>
-                      {!hasRealTx && <DemoBadge />}
+                      {realTx.length === 0 && <DemoBadge />}
                     </div>
                     <p className="text-xs text-muted-foreground">From {tx.from}</p>
                   </div>
