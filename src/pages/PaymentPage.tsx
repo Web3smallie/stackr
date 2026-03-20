@@ -8,9 +8,9 @@ import { ArrowLeft, Wallet, ExternalLink, Check, PartyPopper, Share2, Loader2 } 
 import { useWallet } from "@solana/wallet-adapter-react";
 import { useWalletModal } from "@solana/wallet-adapter-react-ui";
 import { useConnection } from "@solana/wallet-adapter-react";
-import { PublicKey, Transaction, SystemProgram, LAMPORTS_PER_SOL } from "@solana/web3.js";
 import { processPayment } from "@/lib/payments";
 import { APP_URL } from "@/lib/appUrl";
+import { buildDirectPaymentTransaction } from "@/lib/tokenTransfers";
 
 const tokenColors: Record<string, string> = {
   SOL: "bg-orange-500/20 text-orange-400 border-orange-500/30",
@@ -116,41 +116,26 @@ const PaymentPage = () => {
 
       if (!result.success) throw new Error("Payment registration failed");
 
-      // 2. Build and sign Solana transaction (SOL only for now)
-      const creatorPubkey = new PublicKey(creator.wallet_address);
-      const treasuryPubkey = new PublicKey(result.transactionPlan.treasuryWallet);
-
-      const transaction = new Transaction();
-
-      // Creator transfer (99%)
-      transaction.add(
-        SystemProgram.transfer({
-          fromPubkey: publicKey,
-          toPubkey: creatorPubkey,
-          lamports: Math.round(creatorAmount * LAMPORTS_PER_SOL),
-        })
-      );
-
-      // Platform fee transfer (0.5% to treasury — other 0.5% handled via Bags API)
-      transaction.add(
-        SystemProgram.transfer({
-          fromPubkey: publicKey,
-          toPubkey: treasuryPubkey,
-          lamports: Math.round(treasuryFee * LAMPORTS_PER_SOL),
-        })
-      );
-
-      const { blockhash } = await connection.getLatestBlockhash();
-      transaction.recentBlockhash = blockhash;
-      transaction.feePayer = publicKey;
+      const { transaction, blockhash, lastValidBlockHeight } = await buildDirectPaymentTransaction({
+        connection,
+        fromPubkey: publicKey,
+        creatorWallet: creator.wallet_address,
+        treasuryWallet: result.transactionPlan.treasuryWallet,
+        amount: finalAmount,
+        token: selectedToken as "SOL" | "USDC" | "USDT" | "BAGS",
+      });
 
       const signed = await signTransaction(transaction);
       const signature = await connection.sendRawTransaction(signed.serialize(), {
         skipPreflight: false,
         preflightCommitment: "confirmed",
       });
-      
-      const confirmation = await connection.confirmTransaction(signature, "confirmed");
+
+      const confirmation = await connection.confirmTransaction({
+        signature,
+        blockhash,
+        lastValidBlockHeight,
+      }, "confirmed");
       if (confirmation.value.err) {
         throw new Error(`Transaction failed on-chain: ${JSON.stringify(confirmation.value.err)}`);
       }

@@ -15,6 +15,8 @@ export interface PaymentResult {
   transactionPlan: {
     total: number;
     platformFee: number;
+    treasuryFee?: number;
+    bagsFee?: number;
     platformFeePercentage: number;
     creatorAmount: number;
     treasuryWallet: string;
@@ -49,16 +51,4 @@ export async function generateAIContent(prompt: string, type: "page_generation" 
   }
 
   return data?.result as string;
-}
-
-export async function bagsAction(action: string, params: Record<string, unknown>) {
-  const { data, error } = await supabase.functions.invoke("bags-trade", {
-    body: { action, ...params },
-  });
-
-  if (error) {
-    throw new Error(error.message || "Bags action failed");
-  }
-
-  return data;
 }
