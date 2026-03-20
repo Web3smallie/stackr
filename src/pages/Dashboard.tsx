@@ -261,6 +261,7 @@ const Dashboard = () => {
     }
 
     if (data) {
+      markSectionUsed("vaults");
       setVaults((prev) => [{
         id: data.id,
         user_id: data.user_id,
@@ -269,7 +270,7 @@ const Dashboard = () => {
         vault_target: Number(data.vault_target),
         vault_target_token: data.vault_target_token,
         current_amount: Number(data.current_amount),
-        vault_progress_percentage: data.vault_progress_percentage ? Number(data.vault_progress_percentage) : 0,
+        vault_progress_percentage: null,
         vault_notes: data.vault_notes,
         unlock_date: data.unlock_date,
         is_locked: data.is_locked,
