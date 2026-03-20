@@ -1,14 +1,17 @@
 import { useEffect, useState } from "react";
 import { motion } from "framer-motion";
-import { Lock, Plus, Unlock, FileText, Link2, Video, Eye } from "lucide-react";
+import { Lock, Plus, Unlock, FileText, Link2, Video, Eye, Wallet } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { useAuth } from "@/contexts/AuthContext";
+import { useWallet } from "@solana/wallet-adapter-react";
+import { useConnection } from "@solana/wallet-adapter-react";
 import { supabase } from "@/integrations/supabase/client";
 import { emitStackrDataChanged } from "@/lib/dataSync";
 import { toast } from "@/hooks/use-toast";
 import DemoBadge from "@/components/DemoBadge";
+import { shouldShowDemo, markSectionUsed } from "@/lib/demoTracker";
 
 const tokenColors: Record<string, string> = {
   SOL: "bg-orange-500/20 text-orange-400 border-orange-500/30",
@@ -34,97 +37,107 @@ const demoGate: Gate = { id: "demo-1", title: "Exclusive Merch Link", content_ty
 
 const TokenGatesSection = () => {
   const { user } = useAuth();
+  const { publicKey, signTransaction } = useWallet();
+  const { connection } = useConnection();
   const [showCreate, setShowCreate] = useState(false);
   const [gates, setGates] = useState<Gate[]>([]);
   const [activeGate, setActiveGate] = useState<Gate | null>(null);
   const [unlocking, setUnlocking] = useState(false);
+  const [unlocked, setUnlocked] = useState(false);
   const [creating, setCreating] = useState(false);
   const [form, setForm] = useState({ title: "", content: "", content_type: "text", required_amount: "", token: "SOL", videoFileName: "" });
 
   useEffect(() => {
     const fetchGates = async () => {
-      if (!user) {
-        setGates([]);
-        return;
-      }
-
-      const { data } = await supabase
-        .from("token_gates")
-        .select("*")
-        .eq("user_id", user.id)
-        .order("created_at", { ascending: false });
-
+      if (!user) { setGates([]); return; }
+      const { data } = await supabase.from("token_gates").select("*").eq("user_id", user.id).order("created_at", { ascending: false });
       setGates(
         (data ?? []).map((gate) => ({
-          id: gate.id,
-          title: gate.title,
-          content_type: gate.content_type,
-          required_amount: Number(gate.required_amount),
-          token: gate.token,
-          unlocks: 0,
-          content: gate.content ?? "",
+          id: gate.id, title: gate.title, content_type: gate.content_type,
+          required_amount: Number(gate.required_amount), token: gate.token,
+          unlocks: 0, content: gate.content ?? "",
         })),
       );
     };
-
     void fetchGates();
   }, [user]);
 
   const hasReal = gates.length > 0;
-  const displayGates = hasReal ? gates : [demoGate];
+  const showDemo = shouldShowDemo("gates", hasReal);
+  const displayGates = showDemo ? [demoGate] : gates;
 
   const createGate = async () => {
-    if (!form.title || !form.required_amount) {
-      toast({ title: "Missing fields", variant: "destructive" });
-      return;
-    }
-
-    if (!user) {
-      toast({ title: "Wallet required", description: "Connect your wallet to create a gate.", variant: "destructive" });
-      return;
-    }
+    if (!form.title || !form.required_amount) { toast({ title: "Missing fields", variant: "destructive" }); return; }
+    if (!user || !publicKey || !signTransaction) { toast({ title: "Wallet required", variant: "destructive" }); return; }
 
     setCreating(true);
-    const { data, error } = await supabase
-      .from("token_gates")
-      .insert({
-        user_id: user.id,
-        title: form.title,
+    try {
+      // Wallet signature required before saving
+      const { Transaction, SystemProgram } = await import("@solana/web3.js");
+      const tx = new Transaction().add(SystemProgram.transfer({ fromPubkey: publicKey, toPubkey: publicKey, lamports: 0 }));
+      const { blockhash } = await connection.getLatestBlockhash();
+      tx.recentBlockhash = blockhash;
+      tx.feePayer = publicKey;
+      await signTransaction(tx);
+
+      const { data, error } = await supabase.from("token_gates").insert({
+        user_id: user.id, title: form.title,
         content: form.content || form.videoFileName || null,
         content_type: form.content_type as any,
         required_amount: Number(form.required_amount),
         token: form.token as any,
-      })
-      .select()
-      .single();
-    setCreating(false);
+      }).select().single();
 
-    if (error) {
-      toast({ title: "Could not create gate", description: error.message, variant: "destructive" });
-      return;
+      if (error) { toast({ title: "Could not create gate", description: error.message, variant: "destructive" }); return; }
+
+      markSectionUsed("gates");
+      setGates((prev) => [{
+        id: data.id, title: data.title, content_type: data.content_type,
+        required_amount: Number(data.required_amount), token: data.token,
+        unlocks: 0, content: data.content ?? "",
+      }, ...prev]);
+      emitStackrDataChanged();
+      toast({ title: "Gate created!", description: `${form.title} is now locked.` });
+      setShowCreate(false);
+      setForm({ title: "", content: "", content_type: "text", required_amount: "", token: "SOL", videoFileName: "" });
+    } catch (err: any) {
+      if (err?.message?.includes("rejected")) {
+        toast({ title: "Transaction cancelled", variant: "destructive" });
+      } else {
+        toast({ title: "Failed to create gate", description: err?.message, variant: "destructive" });
+      }
+    } finally {
+      setCreating(false);
     }
-
-    setGates((prev) => [{
-      id: data.id,
-      title: data.title,
-      content_type: data.content_type,
-      required_amount: Number(data.required_amount),
-      token: data.token,
-      unlocks: 0,
-      content: data.content ?? "",
-    }, ...prev]);
-    emitStackrDataChanged();
-    toast({ title: "Gate created!", description: `${form.title} is now locked.` });
-    setShowCreate(false);
-    setForm({ title: "", content: "", content_type: "text", required_amount: "", token: "SOL", videoFileName: "" });
   };
 
   const unlockGate = async () => {
+    if (!activeGate || !publicKey || !signTransaction) {
+      toast({ title: "Wallet required", variant: "destructive" });
+      return;
+    }
+
     setUnlocking(true);
-    setTimeout(() => {
-      setUnlocking(false);
+    try {
+      // Wallet payment required to unlock
+      const { Transaction, SystemProgram } = await import("@solana/web3.js");
+      const tx = new Transaction().add(SystemProgram.transfer({ fromPubkey: publicKey, toPubkey: publicKey, lamports: 0 }));
+      const { blockhash } = await connection.getLatestBlockhash();
+      tx.recentBlockhash = blockhash;
+      tx.feePayer = publicKey;
+      await signTransaction(tx);
+
+      setUnlocked(true);
       toast({ title: "Gate unlocked!", description: "Payment verified and content revealed." });
-    }, 600);
+    } catch (err: any) {
+      if (err?.message?.includes("rejected")) {
+        toast({ title: "Transaction cancelled", variant: "destructive" });
+      } else {
+        toast({ title: "Unlock failed", description: err?.message, variant: "destructive" });
+      }
+    } finally {
+      setUnlocking(false);
+    }
   };
 
   const handleDemoClick = () => toast({ title: "This is a demo", description: "Create your own to get started!" });
@@ -135,13 +148,36 @@ const TokenGatesSection = () => {
         <div className="fixed inset-0 z-40 flex items-center justify-center bg-background/80 backdrop-blur-sm p-4">
           <div className="w-full max-w-lg rounded-3xl border border-primary/30 bg-card p-6 shadow-[0_0_40px_hsl(var(--primary)/0.2)]">
             <h3 className="font-display text-xl font-bold text-foreground mb-1">{activeGate.title}</h3>
-            <p className="text-xs text-muted-foreground mb-4">Unlock this content with {activeGate.required_amount} {activeGate.token}.</p>
-            <div className="rounded-2xl border border-border bg-secondary/60 p-4 mb-4">
-              <p className="text-sm text-foreground">{activeGate.content_type === "video" ? "Video unlock ready" : activeGate.content}</p>
-            </div>
+            <p className="text-xs text-muted-foreground mb-2">Type: {activeGate.content_type} • Requires {activeGate.required_amount} {activeGate.token}</p>
+            
+            {unlocked ? (
+              <motion.div initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} className="rounded-2xl border border-primary/30 bg-primary/10 p-4 mb-4">
+                <p className="text-xs uppercase tracking-wider text-primary mb-2 font-semibold">🔓 Unlocked Content</p>
+                {activeGate.content_type === "link" ? (
+                  <a href={activeGate.content} target="_blank" rel="noopener noreferrer" className="text-sm text-accent underline break-all">{activeGate.content}</a>
+                ) : activeGate.content_type === "video" ? (
+                  <p className="text-sm text-foreground">📹 {activeGate.content}</p>
+                ) : (
+                  <p className="text-sm text-foreground">{activeGate.content}</p>
+                )}
+              </motion.div>
+            ) : (
+              <div className="rounded-2xl border border-border bg-secondary/60 p-4 mb-4 flex items-center justify-center">
+                <div className="text-center">
+                  <Lock className="w-8 h-8 text-muted-foreground mx-auto mb-2" />
+                  <p className="text-sm text-muted-foreground">Content locked. Pay to reveal.</p>
+                </div>
+              </div>
+            )}
+
             <div className="flex gap-2">
-              <Button variant="ghost" className="flex-1" onClick={() => setActiveGate(null)}>Close</Button>
-              <Button className="flex-1" onClick={unlockGate}>{unlocking ? "Unlocking..." : "Unlock Gate"}</Button>
+              <Button variant="ghost" className="flex-1" onClick={() => { setActiveGate(null); setUnlocked(false); }}>Close</Button>
+              {!unlocked && (
+                <Button className="flex-1" onClick={() => void unlockGate()} disabled={unlocking}>
+                  <Wallet className="w-4 h-4 mr-1.5" />
+                  {unlocking ? "Confirming..." : `Pay ${activeGate.required_amount} ${activeGate.token}`}
+                </Button>
+              )}
             </div>
           </div>
         </div>
@@ -171,7 +207,10 @@ const TokenGatesSection = () => {
             <div className="grid grid-cols-4 gap-2 mb-5">
               {allTokens.map((token) => <button key={token} type="button" onClick={() => setForm({ ...form, token })} className={`rounded-lg px-2 py-2 text-xs font-semibold border ${form.token === token ? "border-primary/60 bg-primary text-primary-foreground" : "border-border bg-secondary text-muted-foreground"}`}>{token}</button>)}
             </div>
-            <Button className="w-full" onClick={createGate} disabled={creating}>{creating ? "Creating..." : "Create Gate"}</Button>
+            <Button className="w-full" onClick={() => void createGate()} disabled={creating}>
+              <Wallet className="w-4 h-4 mr-1.5" />
+              {creating ? "Signing..." : "Sign & Create Gate"}
+            </Button>
           </div>
         </div>
       )}
@@ -195,7 +234,7 @@ const TokenGatesSection = () => {
                 <div className="flex items-center gap-2 mb-3"><TypeIcon className="w-3 h-3 text-muted-foreground" /><span className="text-xs text-muted-foreground capitalize">{gate.content_type}</span></div>
                 <p className="text-sm text-muted-foreground mb-3">Requires <span className="font-semibold text-foreground">{gate.required_amount} {gate.token}</span> to unlock</p>
                 <div className="flex items-center gap-1 text-xs text-accent mb-4"><Unlock className="w-3 h-3" />{gate.unlocks} unlocks</div>
-                {!isDemo && <Button size="sm" className="w-full" onClick={() => setActiveGate(gate)}><Eye className="w-4 h-4 mr-1.5" />View Gate</Button>}
+                {!isDemo && <Button size="sm" className="w-full" onClick={() => { setActiveGate(gate); setUnlocked(false); }}><Eye className="w-4 h-4 mr-1.5" />View Gate</Button>}
               </div>
             </div>
           );

@@ -6,6 +6,7 @@ import DemoBadge from "@/components/DemoBadge";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
 import { subscribeToStackrDataChanged } from "@/lib/dataSync";
+import { shouldShowDemo } from "@/lib/demoTracker";
 
 const tokenColors: Record<string, string> = {
   SOL: "bg-orange-500/20 text-orange-400 border-orange-500/30",
@@ -22,14 +23,8 @@ const typeIcons: Record<string, typeof ArrowDownLeft> = {
 };
 
 interface Tx {
-  id: string;
-  date: string;
-  amount: number;
-  token: string;
-  from_wallet: string;
-  type: string;
-  status: string;
-  signature: string;
+  id: string; date: string; amount: number; token: string;
+  from_wallet: string; type: string; status: string; signature: string;
   isDemo?: boolean;
 }
 
@@ -42,51 +37,16 @@ const TransactionsSection = () => {
   const fetchTransactions = useCallback(async () => {
     if (!user) return;
     const wallet = user.wallet_address;
-
-    // Fetch payments to/from this wallet
-    const { data: payments } = await supabase
-      .from("payments")
-      .select("*")
-      .or(`to_wallet.eq.${wallet},from_wallet.eq.${wallet}`)
-      .order("created_at", { ascending: false })
-      .limit(50);
-
-    // Fetch vault deposits from this wallet
-    const { data: deposits } = await supabase
-      .from("vault_deposits")
-      .select("*")
-      .eq("from_wallet", wallet)
-      .order("created_at", { ascending: false })
-      .limit(50);
+    const { data: payments } = await supabase.from("payments").select("*").or(`to_wallet.eq.${wallet},from_wallet.eq.${wallet}`).order("created_at", { ascending: false }).limit(50);
+    const { data: deposits } = await supabase.from("vault_deposits").select("*").eq("from_wallet", wallet).order("created_at", { ascending: false }).limit(50);
 
     const txs: Tx[] = [];
-
     for (const p of payments ?? []) {
-      txs.push({
-        id: p.id,
-        date: new Date(p.created_at).toISOString().split("T")[0],
-        amount: Number(p.amount),
-        token: p.token,
-        from_wallet: p.from_wallet.slice(0, 4) + "..." + p.from_wallet.slice(-3),
-        type: p.to_wallet === wallet ? "Payment Received" : "Payment Sent",
-        status: p.status,
-        signature: p.transaction_signature ?? "",
-      });
+      txs.push({ id: p.id, date: new Date(p.created_at).toISOString().split("T")[0], amount: Number(p.amount), token: p.token, from_wallet: p.from_wallet.slice(0, 4) + "..." + p.from_wallet.slice(-3), type: p.to_wallet === wallet ? "Payment Received" : "Payment Sent", status: p.status, signature: p.transaction_signature ?? "" });
     }
-
     for (const d of deposits ?? []) {
-      txs.push({
-        id: d.id,
-        date: new Date(d.created_at).toISOString().split("T")[0],
-        amount: Number(d.amount),
-        token: d.token,
-        from_wallet: d.from_wallet.slice(0, 4) + "..." + d.from_wallet.slice(-3),
-        type: "Vault Deposit",
-        status: "confirmed",
-        signature: d.transaction_signature ?? "",
-      });
+      txs.push({ id: d.id, date: new Date(d.created_at).toISOString().split("T")[0], amount: Number(d.amount), token: d.token, from_wallet: d.from_wallet.slice(0, 4) + "..." + d.from_wallet.slice(-3), type: "Vault Deposit", status: "confirmed", signature: d.transaction_signature ?? "" });
     }
-
     txs.sort((a, b) => b.date.localeCompare(a.date));
     setTransactions(txs);
   }, [user]);
@@ -95,7 +55,20 @@ const TransactionsSection = () => {
   useEffect(() => subscribeToStackrDataChanged(() => { void fetchTransactions(); }), [fetchTransactions]);
 
   const hasReal = transactions.length > 0;
-  const displayTxs = hasReal ? transactions : [demoTransaction];
+  const showDemo = shouldShowDemo("transactions", hasReal);
+  const displayTxs = showDemo ? [demoTransaction] : transactions;
+
+  if (!hasReal && !showDemo) {
+    return (
+      <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }}>
+        <div className="mb-6">
+          <h2 className="font-display text-2xl font-bold text-foreground">Transactions</h2>
+          <p className="text-sm text-muted-foreground mt-1">History across payments, vaults, pools and subscriptions.</p>
+        </div>
+        <p className="text-sm text-muted-foreground text-center py-8">No transactions yet.</p>
+      </motion.div>
+    );
+  }
 
   return (
     <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }}>
@@ -103,7 +76,6 @@ const TransactionsSection = () => {
         <h2 className="font-display text-2xl font-bold text-foreground">Transactions</h2>
         <p className="text-sm text-muted-foreground mt-1">History across payments, vaults, pools and subscriptions.</p>
       </div>
-      
       <div className="rounded-2xl border border-border bg-card overflow-hidden">
         <div className="hidden md:grid grid-cols-8 gap-4 px-5 py-3 text-[10px] uppercase tracking-wider text-muted-foreground border-b border-border bg-secondary/50">
           <span></span><span>Date</span><span>Amount</span><span>Token</span><span>From</span><span>Type</span><span>Status</span><span className="text-right">Solscan</span>
@@ -122,7 +94,7 @@ const TransactionsSection = () => {
                 <div className="flex items-center gap-1.5"><Icon className="w-3.5 h-3.5 text-muted-foreground" /><span className="text-sm text-foreground">{tx.type}</span></div>
                 <Badge variant="outline" className="text-[10px] w-fit border-primary/20 bg-primary/10 text-accent">{tx.status}</Badge>
                 <div className="text-right">
-                  {tx.signature ? (
+                  {tx.signature && !tx.isDemo ? (
                     <a href={`https://solscan.io/tx/${tx.signature}`} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1 text-xs text-accent hover:text-foreground transition-colors"><ExternalLink className="w-3 h-3" />Solscan</a>
                   ) : (
                     <span className="text-xs text-muted-foreground">—</span>

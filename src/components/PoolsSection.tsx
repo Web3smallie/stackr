@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Plus, UserPlus, Users, Vote, TrendingUp, X, BarChart3, Zap, Search, LogOut, Loader2 } from "lucide-react";
+import { Plus, UserPlus, Users, Vote, TrendingUp, X, BarChart3, Zap, Search, LogOut, Loader2, Wallet } from "lucide-react";
 import DemoBadge from "@/components/DemoBadge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -8,9 +8,12 @@ import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
 import PoolDetailsModal from "@/components/PoolDetailsModal";
 import { useAuth } from "@/contexts/AuthContext";
+import { useWallet } from "@solana/wallet-adapter-react";
+import { useConnection } from "@solana/wallet-adapter-react";
 import { supabase } from "@/integrations/supabase/client";
 import { emitStackrDataChanged, subscribeToStackrDataChanged } from "@/lib/dataSync";
 import { toast } from "@/hooks/use-toast";
+import { shouldShowDemo, markSectionUsed } from "@/lib/demoTracker";
 
 const tokenColors: Record<string, string> = {
   SOL: "bg-orange-500/20 text-orange-400 border-orange-500/30",
@@ -67,8 +70,11 @@ type ViewMode = "active" | "create" | "join" | "voting";
 
 const PoolsSection = () => {
   const { user } = useAuth();
+  const { publicKey, signTransaction } = useWallet();
+  const { connection } = useConnection();
   const [view, setView] = useState<ViewMode>("active");
   const [pools, setPools] = useState<PoolData[]>([]);
+  const [joinedPoolIds, setJoinedPoolIds] = useState<string[]>([]);
   const [selectedPoolId, setSelectedPoolId] = useState<string | null>(null);
   const [detailsPool, setDetailsPool] = useState<PoolData | null>(null);
   const [joinAmounts, setJoinAmounts] = useState<Record<string, string>>({});
@@ -79,13 +85,48 @@ const PoolsSection = () => {
 
   const fetchPools = useCallback(async () => {
     if (!user) return;
-    const { data } = await supabase
+
+    // Fetch pools user created
+    const { data: createdPools } = await supabase
       .from("pools")
       .select("*")
       .eq("creator_id", user.id)
       .order("created_at", { ascending: false });
+
+    // Fetch pools user joined as member
+    const { data: memberRows } = await supabase
+      .from("pool_members")
+      .select("pool_id, contribution, share_percentage")
+      .eq("wallet_address", user.wallet_address);
+
+    const joinedIds = (memberRows ?? []).map((m) => m.pool_id);
+    setJoinedPoolIds(joinedIds);
+
+    let joinedPools: any[] = [];
+    if (joinedIds.length > 0) {
+      const { data } = await supabase
+        .from("pools")
+        .select("*")
+        .in("id", joinedIds);
+      joinedPools = data ?? [];
+    }
+
+    const allPools = [...(createdPools ?? []), ...joinedPools];
+    // Deduplicate
+    const seen = new Set<string>();
+    const unique = allPools.filter((p) => {
+      if (seen.has(p.id)) return false;
+      seen.add(p.id);
+      return true;
+    });
+
+    const memberMap: Record<string, { contribution: number; share: number }> = {};
+    (memberRows ?? []).forEach((m) => {
+      memberMap[m.pool_id] = { contribution: Number(m.contribution), share: Number(m.share_percentage) };
+    });
+
     setPools(
-      (data ?? []).map((p) => ({
+      unique.map((p) => ({
         id: p.id,
         name: p.name,
         description: p.description ?? "",
@@ -94,8 +135,8 @@ const PoolsSection = () => {
         token: p.token as PoolToken,
         target_tokens: p.target_tokens ?? [],
         is_active: p.is_active,
-        my_contribution: 0,
-        my_share: 0,
+        my_contribution: memberMap[p.id]?.contribution ?? 0,
+        my_share: memberMap[p.id]?.share ?? 0,
       })),
     );
   }, [user]);
@@ -106,12 +147,13 @@ const PoolsSection = () => {
   const selectedPool = useMemo(() => pools.find((pool) => pool.id === selectedPoolId) ?? null, [pools, selectedPoolId]);
 
   const hasReal = pools.length > 0;
+  const showDemo = shouldShowDemo("pools", hasReal);
 
   const filteredPools = useMemo(() => {
-    const source = hasReal ? pools : [demoPool];
+    const source = showDemo ? [demoPool] : pools;
     if (!searchQuery.trim()) return source;
     return source.filter((p) => p.name.toLowerCase().includes(searchQuery.toLowerCase()));
-  }, [pools, hasReal, searchQuery]);
+  }, [pools, showDemo, searchQuery]);
 
   const toggleTargetToken = (token: string) => {
     setCreateForm((prev) => ({
@@ -121,14 +163,8 @@ const PoolsSection = () => {
   };
 
   const createPool = async () => {
-    if (!createForm.name) {
-      toast({ title: "Add a pool name", variant: "destructive" });
-      return;
-    }
-    if (!user) {
-      toast({ title: "Wallet required", variant: "destructive" });
-      return;
-    }
+    if (!createForm.name) { toast({ title: "Add a pool name", variant: "destructive" }); return; }
+    if (!user) { toast({ title: "Wallet required", variant: "destructive" }); return; }
     setCreating(true);
 
     const { data, error } = await supabase.from("pools").insert({
@@ -140,24 +176,15 @@ const PoolsSection = () => {
     }).select().single();
 
     setCreating(false);
-
-    if (error) {
-      toast({ title: "Could not create pool", description: error.message, variant: "destructive" });
-      return;
-    }
+    if (error) { toast({ title: "Could not create pool", description: error.message, variant: "destructive" }); return; }
 
     if (data) {
+      markSectionUsed("pools");
       setPools((prev) => [{
-        id: data.id,
-        name: data.name,
-        description: data.description ?? "",
-        total_value: Number(data.total_value),
-        member_count: data.member_count,
-        token: data.token as PoolToken,
-        target_tokens: data.target_tokens ?? [],
-        is_active: data.is_active,
-        my_contribution: 0,
-        my_share: 0,
+        id: data.id, name: data.name, description: data.description ?? "",
+        total_value: Number(data.total_value), member_count: data.member_count,
+        token: data.token as PoolToken, target_tokens: data.target_tokens ?? [],
+        is_active: data.is_active, my_contribution: 0, my_share: 0,
       }, ...prev]);
       emitStackrDataChanged();
       toast({ title: "Pool created!", description: `${createForm.name} is ready to share.` });
@@ -166,13 +193,42 @@ const PoolsSection = () => {
     }
   };
 
-  const joinPool = (pool: PoolData) => {
+  const joinPool = async (pool: PoolData) => {
     const amount = joinAmounts[pool.id];
-    if (!amount || Number(amount) <= 0) {
-      toast({ title: "Enter a valid contribution", variant: "destructive" });
-      return;
+    if (!amount || Number(amount) <= 0) { toast({ title: "Enter a valid contribution", variant: "destructive" }); return; }
+    if (!user || !publicKey || !signTransaction) { toast({ title: "Wallet required", variant: "destructive" }); return; }
+
+    try {
+      // Request wallet signature before saving
+      const { Transaction, SystemProgram } = await import("@solana/web3.js");
+      const tx = new Transaction().add(SystemProgram.transfer({ fromPubkey: publicKey, toPubkey: publicKey, lamports: 0 }));
+      const { blockhash } = await connection.getLatestBlockhash();
+      tx.recentBlockhash = blockhash;
+      tx.feePayer = publicKey;
+      await signTransaction(tx);
+
+      // Save pool member
+      const { error } = await supabase.from("pool_members").insert({
+        pool_id: pool.id,
+        wallet_address: user.wallet_address,
+        contribution: Number(amount),
+        share_percentage: 0,
+      });
+
+      if (error) { toast({ title: "Could not join pool", description: error.message, variant: "destructive" }); return; }
+
+      markSectionUsed("pools");
+      emitStackrDataChanged();
+      await fetchPools();
+      toast({ title: "Pool joined!", description: `${amount} ${pool.token} committed to ${pool.name}.` });
+      setView("active");
+    } catch (err: any) {
+      if (err?.message?.includes("rejected")) {
+        toast({ title: "Transaction cancelled", variant: "destructive" });
+      } else {
+        toast({ title: "Failed to join pool", description: err?.message, variant: "destructive" });
+      }
     }
-    toast({ title: "Pool joined!", description: `${amount} ${pool.token} committed to ${pool.name}.` });
   };
 
   const handleVote = (poolId: string, voteId: string, direction: VoteDirection) => {
@@ -195,10 +251,18 @@ const PoolsSection = () => {
     toast({ title: "Vote recorded!", description: `You voted ${direction}. Progress bar updated.` });
   };
 
-  const leavePool = (poolId: string) => {
+  const leavePool = async (poolId: string) => {
+    if (!user) return;
+    // Delete pool member entry
+    await supabase.from("pool_members").delete().eq("pool_id", poolId).eq("wallet_address", user.wallet_address);
+    // If user is creator, also delete the pool
+    await supabase.from("pools").delete().eq("id", poolId).eq("creator_id", user.id);
+
+    markSectionUsed("pools"); // Ensure demo never comes back
     setPools((prev) => prev.filter((pool) => pool.id !== poolId));
     setSelectedPoolId(null);
     setConfirmLeaveId(null);
+    emitStackrDataChanged();
     toast({ title: "Pool left!", description: "Your contribution will be returned." });
   };
 
@@ -215,13 +279,7 @@ const PoolsSection = () => {
             <p className="text-sm text-muted-foreground mb-4">Are you sure you want to leave this pool? Your contribution will be returned.</p>
             <div className="flex gap-2">
               <Button variant="ghost" className="flex-1" onClick={() => setConfirmLeaveId(null)}>Cancel</Button>
-              <button
-                type="button"
-                onClick={() => leavePool(confirmLeaveId)}
-                className="flex-1 inline-flex items-center justify-center rounded-lg px-4 py-2 text-sm font-medium bg-destructive text-destructive-foreground hover:bg-destructive/90 transition-colors"
-              >
-                Confirm Leave
-              </button>
+              <button type="button" onClick={() => void leavePool(confirmLeaveId)} className="flex-1 inline-flex items-center justify-center rounded-lg px-4 py-2 text-sm font-medium bg-destructive text-destructive-foreground hover:bg-destructive/90 transition-colors">Confirm Leave</button>
             </div>
           </div>
         </div>
@@ -298,7 +356,7 @@ const PoolsSection = () => {
                     <div className="flex flex-wrap gap-2 mb-4">{pool.target_tokens.map((token) => <Badge key={token} variant="outline" className={`text-[10px] border ${tokenColors[token]}`}>{token}</Badge>)}</div>
                     <div className="flex gap-2">
                       <Input placeholder={`Amount (${pool.token})`} type="number" className="bg-secondary border-border flex-1" value={joinAmounts[pool.id] ?? ""} onChange={(e) => setJoinAmounts((prev) => ({ ...prev, [pool.id]: e.target.value }))} />
-                      <Button size="sm" onClick={() => joinPool(pool)}><UserPlus className="w-4 h-4 mr-1" />Join</Button>
+                      <Button size="sm" onClick={() => void joinPool(pool)}><Wallet className="w-4 h-4 mr-1" />Join</Button>
                     </div>
                   </div>
                 </div>
@@ -361,6 +419,9 @@ const PoolsSection = () => {
         <>
           <h3 className="font-display text-lg font-bold text-foreground mb-4 flex items-center gap-2"><BarChart3 className="w-5 h-5 text-primary" />My Active Pools</h3>
           
+          {filteredPools.length === 0 && !showDemo && (
+            <p className="text-sm text-muted-foreground text-center py-8">No pools yet. Create or join one to get started!</p>
+          )}
           {filteredPools.length === 0 && searchQuery && (
             <p className="text-sm text-muted-foreground text-center py-8">No pools found matching "{searchQuery}"</p>
           )}

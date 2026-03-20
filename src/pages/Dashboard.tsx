@@ -44,6 +44,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { Input } from "@/components/ui/input";
 import { toast } from "@/hooks/use-toast";
 import { emitStackrDataChanged, subscribeToStackrDataChanged } from "@/lib/dataSync";
+import { shouldShowDemo, markSectionUsed } from "@/lib/demoTracker";
 
 const sidebarLinks = [
   { icon: LayoutDashboard, label: "Dashboard", section: "dashboard" },
@@ -90,6 +91,8 @@ interface VaultData {
   allow_contributions: boolean;
   isDemo?: boolean;
 }
+
+// VaultData interface: vault_progress_percentage is computed dynamically, never sent in updates
 
 const container = {
   hidden: { opacity: 0 },
@@ -141,7 +144,7 @@ const Dashboard = () => {
         vault_target: Number(v.vault_target),
         vault_target_token: v.vault_target_token,
         current_amount: Number(v.current_amount),
-        vault_progress_percentage: v.vault_progress_percentage ? Number(v.vault_progress_percentage) : 0,
+        vault_progress_percentage: null, // Computed dynamically in VaultCard
         vault_notes: v.vault_notes,
         unlock_date: v.unlock_date,
         is_locked: v.is_locked,
@@ -258,6 +261,7 @@ const Dashboard = () => {
     }
 
     if (data) {
+      markSectionUsed("vaults");
       setVaults((prev) => [{
         id: data.id,
         user_id: data.user_id,
@@ -266,7 +270,7 @@ const Dashboard = () => {
         vault_target: Number(data.vault_target),
         vault_target_token: data.vault_target_token,
         current_amount: Number(data.current_amount),
-        vault_progress_percentage: data.vault_progress_percentage ? Number(data.vault_progress_percentage) : 0,
+        vault_progress_percentage: null,
         vault_notes: data.vault_notes,
         unlock_date: data.unlock_date,
         is_locked: data.is_locked,
@@ -286,7 +290,8 @@ const Dashboard = () => {
   };
 
   const hasRealVaults = vaults.length > 0;
-  const displayVaults: VaultData[] = hasRealVaults ? vaults : [demoVault];
+  const showVaultDemo = shouldShowDemo("vaults", hasRealVaults);
+  const displayVaults: VaultData[] = showVaultDemo ? [demoVault] : (hasRealVaults ? vaults : []);
 
   // Connect wallet page with signature verification modal overlay
   if (!connected) {
