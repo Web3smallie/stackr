@@ -503,7 +503,10 @@ const Dashboard = () => {
       <main className="flex-1 md:ml-60">
         <header className="border-b border-border px-4 sm:px-6 md:px-8 h-16 flex items-center justify-between sticky top-0 bg-background/80 backdrop-blur-sm z-10">
           <div className="flex items-center gap-3">
-            <span className="md:hidden font-display text-lg font-bold text-foreground cursor-pointer" onClick={() => navigate("/")}>STACKR</span>
+            <span className="md:hidden font-display text-lg font-bold text-foreground cursor-pointer inline-flex items-center gap-1.5" onClick={() => navigate("/")}>
+              <Home className="w-3.5 h-3.5 text-muted-foreground" />
+              STACKR
+            </span>
           </div>
           <div className="hidden md:block" />
           <div className="flex items-center gap-3">
