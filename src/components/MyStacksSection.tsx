@@ -70,7 +70,7 @@ const MyStacksSection = () => {
   }, [form.slug]);
 
   const hasRealStacks = stacks.length > 0;
-  const previewLink = useMemo(() => `getstackr.app/${form.slug || "username"}`, [form.slug]);
+  const previewLink = useMemo(() => `${APP_DOMAIN}/${form.slug || "username"}`, [form.slug]);
 
   const toggleToken = (token: string) => {
     setForm((prev) => ({
