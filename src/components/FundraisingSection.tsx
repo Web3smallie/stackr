@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { APP_DOMAIN, APP_URL } from "@/lib/appUrl";
 import { motion } from "framer-motion";
 import { Target, Plus, Users, Clock, TrendingUp, Share2, ExternalLink, Wallet } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -168,7 +169,7 @@ const FundraisingSection = () => {
   const shareGoal = (goal: Goal) => {
     const slug = encodeURIComponent(goal.title.toLowerCase().replace(/\s+/g, "-"));
     const username = user?.username || user?.wallet_address?.slice(0, 8) || "user";
-    const link = `getstackr.app/${username}/fundraising/${slug}`;
+    const link = `${APP_DOMAIN}/${username}/fundraising/${slug}`;
     navigator.clipboard.writeText(link);
     toast({ title: "Link copied!", description: link });
   };
@@ -176,7 +177,7 @@ const FundraisingSection = () => {
   const shareToX = (goal: Goal) => {
     const slug = encodeURIComponent(goal.title.toLowerCase().replace(/\s+/g, "-"));
     const username = user?.username || user?.wallet_address?.slice(0, 8) || "user";
-    const link = `https://getstackr.app/${username}/fundraising/${slug}`;
+    const link = `${APP_URL}/${username}/fundraising/${slug}`;
     const text = `Help me reach my fundraising goal "${goal.title}" on Stackr! 🎯\n\n${goal.current_amount}/${goal.target_amount} ${goal.token} raised\n\nContribute here: ${link}`;
     window.open(`https://x.com/intent/tweet?text=${encodeURIComponent(text)}`, "_blank");
   };

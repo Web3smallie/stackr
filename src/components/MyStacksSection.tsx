@@ -8,6 +8,7 @@ import { Badge } from "@/components/ui/badge";
 import { Switch } from "@/components/ui/switch";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
+import { APP_DOMAIN, APP_URL } from "@/lib/appUrl";
 import { toast } from "@/hooks/use-toast";
 import DemoBadge from "@/components/DemoBadge";
 
@@ -69,7 +70,7 @@ const MyStacksSection = () => {
   }, [form.slug]);
 
   const hasRealStacks = stacks.length > 0;
-  const previewLink = useMemo(() => `getstackr.app/${form.slug || "username"}`, [form.slug]);
+  const previewLink = useMemo(() => `${APP_DOMAIN}/${form.slug || "username"}`, [form.slug]);
 
   const toggleToken = (token: string) => {
     setForm((prev) => ({
@@ -105,16 +106,16 @@ const MyStacksSection = () => {
     }
     if (data) {
       setStacks((prev) => [...prev, { ...data, accepted_tokens: data.accepted_tokens || [], isDemo: false }]);
-      toast({ title: "Payment page created!", description: `getstackr.app/${data.slug}` });
+      toast({ title: "Payment page created!", description: `${APP_DOMAIN}/${data.slug}` });
       setShowCreate(false);
       setForm({ title: "", slug: "", description: "", accepted_tokens: ["SOL", "USDC", "USDT", "BAGS"], suggested_amounts: "1, 5, 10, 25", is_private: false });
     }
   };
 
   const copyLink = async (slug: string) => {
-    await navigator.clipboard.writeText(`getstackr.app/${slug}`);
+    await navigator.clipboard.writeText(`${APP_DOMAIN}/${slug}`);
     setCopiedSlug(slug);
-    toast({ title: "Link copied", description: `getstackr.app/${slug}` });
+    toast({ title: "Link copied", description: `${APP_DOMAIN}/${slug}` });
     setTimeout(() => setCopiedSlug(null), 1500);
   };
 
@@ -212,7 +213,7 @@ const MyStacksSection = () => {
                   </div>
                   <Badge variant="outline" className="bg-primary/10 text-accent border-primary/20">Active</Badge>
                 </div>
-                <div className="flex items-center gap-2 mb-3 text-xs text-muted-foreground"><Link2 className="w-3 h-3" /><span className="font-mono">getstackr.app/{stack.slug}</span></div>
+                <div className="flex items-center gap-2 mb-3 text-xs text-muted-foreground"><Link2 className="w-3 h-3" /><span className="font-mono">{APP_DOMAIN}/{stack.slug}</span></div>
                 <div className="flex flex-wrap gap-1.5 mb-4">{stack.accepted_tokens.map((token) => <Badge key={token} variant="outline" className={`text-[10px] border ${tokenColors[token] || ""}`}>{token}</Badge>)}</div>
                 {!isDemo && (
                   <div className="flex flex-wrap gap-2">
@@ -224,9 +225,9 @@ const MyStacksSection = () => {
                 {!isDemo && showQR === stack.id && (
                   <motion.div initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: "auto" }} className="mt-4 p-4 rounded-xl bg-secondary border border-border text-center">
                     <div ref={qrContainerRef} className="w-48 h-48 mx-auto rounded-2xl bg-background border border-primary/30 flex items-center justify-center mb-3 p-3 shadow-[0_0_22px_hsl(var(--primary)/0.18)]">
-                      <QRCodeSVG value={`https://getstackr.app/${stack.slug}`} size={160} bgColor="#1A0533" fgColor="#FFFFFF" includeMargin />
+                      <QRCodeSVG value={`${APP_URL}/${stack.slug}`} size={160} bgColor="#1A0533" fgColor="#FFFFFF" includeMargin />
                     </div>
-                    <p className="text-xs text-muted-foreground mb-3">getstackr.app/{stack.slug}</p>
+                    <p className="text-xs text-muted-foreground mb-3">{APP_DOMAIN}/{stack.slug}</p>
                     <Button size="sm" onClick={() => downloadQR(stack.slug)}><Download className="w-4 h-4 mr-1" />Download PNG</Button>
                   </motion.div>
                 )}
