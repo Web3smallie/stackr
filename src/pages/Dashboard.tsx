@@ -144,7 +144,7 @@ const Dashboard = () => {
         vault_target: Number(v.vault_target),
         vault_target_token: v.vault_target_token,
         current_amount: Number(v.current_amount),
-        vault_progress_percentage: v.vault_progress_percentage ? Number(v.vault_progress_percentage) : 0,
+        vault_progress_percentage: null, // Computed dynamically in VaultCard
         vault_notes: v.vault_notes,
         unlock_date: v.unlock_date,
         is_locked: v.is_locked,
