@@ -113,9 +113,9 @@ const MyStacksSection = () => {
   };
 
   const copyLink = async (slug: string) => {
-    await navigator.clipboard.writeText(`getstackr.app/${slug}`);
+    await navigator.clipboard.writeText(`${APP_DOMAIN}/${slug}`);
     setCopiedSlug(slug);
-    toast({ title: "Link copied", description: `getstackr.app/${slug}` });
+    toast({ title: "Link copied", description: `${APP_DOMAIN}/${slug}` });
     setTimeout(() => setCopiedSlug(null), 1500);
   };
 
