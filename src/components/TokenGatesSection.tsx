@@ -122,16 +122,40 @@ const TokenGatesSection = () => {
 
     setUnlocking(true);
     try {
-      // Wallet payment required to unlock
-      const { Transaction, SystemProgram } = await import("@solana/web3.js");
-      const tx = new Transaction().add(SystemProgram.transfer({ fromPubkey: publicKey, toPubkey: publicKey, lamports: 0 }));
-      const { blockhash } = await connection.getLatestBlockhash();
-      tx.recentBlockhash = blockhash;
-      tx.feePayer = publicKey;
-      await signTransaction(tx);
+      // Token gate unlocks go to treasury wallet
+      const treasuryWallet = await getTreasuryWallet();
+      const treasuryPubkey = new PublicKey(treasuryWallet);
+
+      let txSignature: string | null = null;
+      if (activeGate.token === "SOL") {
+        txSignature = await sendSolTransaction({
+          connection,
+          fromPubkey: publicKey,
+          toPubkey: treasuryPubkey,
+          amount: activeGate.required_amount,
+          signTransaction,
+        });
+      } else {
+        const { Transaction, SystemProgram } = await import("@solana/web3.js");
+        const tx = new Transaction().add(SystemProgram.transfer({ fromPubkey: publicKey, toPubkey: treasuryPubkey, lamports: 0 }));
+        const { blockhash } = await connection.getLatestBlockhash();
+        tx.recentBlockhash = blockhash;
+        tx.feePayer = publicKey;
+        await signTransaction(tx);
+      }
+
+      // Register Bags fee sharing
+      const bagsResult = await registerBagsFeeSharing({
+        amount: activeGate.required_amount, token: activeGate.token,
+        fromWallet: publicKey.toBase58(), toWallet: treasuryWallet,
+        transactionType: "token_gate_unlock", transactionSignature: txSignature,
+      });
 
       setUnlocked(true);
       toast({ title: "Gate unlocked!", description: "Payment verified and content revealed." });
+      if (bagsResult.success) {
+        toast({ title: "💼 Bags Fee Sharing", description: bagsResult.message });
+      }
     } catch (err: any) {
       if (err?.message?.includes("rejected")) {
         toast({ title: "Transaction cancelled", variant: "destructive" });
