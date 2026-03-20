@@ -490,7 +490,7 @@ const Dashboard = () => {
           </div>
         </header>
 
-        <div className="p-4 sm:p-6 md:p-8 max-w-6xl">
+        <div className="p-4 sm:p-6 md:p-8 pb-24 md:pb-8 max-w-6xl">
           <motion.div variants={container} initial="hidden" animate="show">
             {activeSection === "dashboard" && <DashboardHome onNavigate={setActiveSection} />}
             {activeSection === "stacks" && <MyStacksSection />}

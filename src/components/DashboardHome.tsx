@@ -132,14 +132,8 @@ const DashboardHome = ({ onNavigate }: Props) => {
         ))}
       </motion.div>
 
-      <motion.div variants={item} className="mb-8">
-        <h3 className="font-display text-lg font-semibold text-foreground mb-3">Quick Actions</h3>
-        <div className="flex flex-wrap gap-3">
-          <Button onClick={() => onNavigate("stacks")}><Link2 className="w-4 h-4 mr-1.5" />Create Payment Link</Button>
-          <Button onClick={() => onNavigate("vaults")}><Plus className="w-4 h-4 mr-1.5" />New Vault</Button>
-          <Button onClick={() => onNavigate("pools")}><UserPlus className="w-4 h-4 mr-1.5" />Join Pool</Button>
-        </div>
-      </motion.div>
+
+
 
       <motion.div variants={item}>
         <div className="flex items-center justify-between mb-3">
