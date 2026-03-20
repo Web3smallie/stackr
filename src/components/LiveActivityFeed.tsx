@@ -114,7 +114,7 @@ const LiveActivityFeed = () => {
           className="text-center mb-10"
         >
           <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full border border-primary/40 bg-primary/10 text-xs text-accent mb-4">
-            <span className="w-1.5 h-1.5 rounded-full bg-green-400 animate-pulse" />
+            <span className="w-1.5 h-1.5 rounded-full bg-success animate-pulse" />
             Live Activity
           </div>
           <h2 className="font-display text-3xl sm:text-4xl font-bold text-foreground">
