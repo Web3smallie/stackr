@@ -434,11 +434,21 @@ const PaymentPage = () => {
         {/* Right: Jupiter Swap Widget */}
         <div className="w-full lg:w-[420px] shrink-0">
           <div className="text-center mb-4">
-            <p className="text-sm font-semibold text-foreground">Support the Bags.fm ecosystem</p>
-            <p className="text-xs text-muted-foreground mt-1">Swap here to pay with BAGS</p>
+            <p className="text-xl font-bold" style={{ color: "#9333EA" }}>Support the Bags.fm ecosystem</p>
+            <p className="text-base font-medium mt-1.5" style={{ color: "#C084FC" }}>Swap here to pay with BAGS</p>
           </div>
-          <div className="rounded-2xl border border-border bg-card shadow-xl overflow-hidden">
+          <div className="rounded-2xl border bg-card shadow-xl overflow-hidden" style={{ borderColor: "rgba(147, 51, 234, 0.5)", boxShadow: "0 0 30px rgba(147, 51, 234, 0.25), 0 0 60px rgba(147, 51, 234, 0.1)" }}>
             <div id="jupiter-terminal" className="min-h-[400px]" />
+            {jupiterFailed && (
+              <div className="flex flex-col items-center justify-center p-8 min-h-[400px]">
+                <p className="text-sm text-muted-foreground mb-4 text-center">Jupiter Terminal could not be loaded</p>
+                <a href="https://jup.ag/swap/SOL-BAGS" target="_blank" rel="noopener noreferrer">
+                  <Button className="font-semibold">
+                    Swap to BAGS on Jupiter ↗
+                  </Button>
+                </a>
+              </div>
+            )}
           </div>
         </div>
       </div>
