@@ -206,6 +206,10 @@ const Dashboard = () => {
       const message = "Sign this message to verify you own this wallet and log into Stackr — this does not cost any gas fees.";
       await signMessage(new TextEncoder().encode(message));
       setSignatureVerified(true);
+      // Persist verification in localStorage
+      if (publicKey) {
+        localStorage.setItem(`stackr_sig_${publicKey.toBase58()}`, "verified");
+      }
       await refreshUser();
       toast({ title: "Wallet verified", description: "You're now signed into Stackr." });
     } catch (error) {
