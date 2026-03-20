@@ -9,7 +9,7 @@ import { Badge } from "@/components/ui/badge";
 import DemoBadge from "@/components/DemoBadge";
 import { supabase } from "@/integrations/supabase/client";
 import { useEffect, useState } from "react";
-import { shouldShowDemo } from "@/lib/demoTracker";
+import { formatDistanceToNow } from "date-fns";
 import { formatDistanceToNow } from "date-fns";
 const item = {
   hidden: { opacity: 0, y: 10 },
