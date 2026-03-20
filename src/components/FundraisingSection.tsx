@@ -177,7 +177,7 @@ const FundraisingSection = () => {
   const shareToX = (goal: Goal) => {
     const slug = encodeURIComponent(goal.title.toLowerCase().replace(/\s+/g, "-"));
     const username = user?.username || user?.wallet_address?.slice(0, 8) || "user";
-    const link = `https://getstackr.app/${username}/fundraising/${slug}`;
+    const link = `${APP_URL}/${username}/fundraising/${slug}`;
     const text = `Help me reach my fundraising goal "${goal.title}" on Stackr! 🎯\n\n${goal.current_amount}/${goal.target_amount} ${goal.token} raised\n\nContribute here: ${link}`;
     window.open(`https://x.com/intent/tweet?text=${encodeURIComponent(text)}`, "_blank");
   };
