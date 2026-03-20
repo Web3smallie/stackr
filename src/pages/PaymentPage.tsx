@@ -55,6 +55,36 @@ const PaymentPage = () => {
   const { setVisible } = useWalletModal();
   const { connection } = useConnection();
 
+  // Load Jupiter Terminal
+  useEffect(() => {
+    const BAGS_MINT = "JxxWsvm9jHt4ah7DT8nKgpEX2iGRrEPaPjbKMZuk4JG";
+
+    const initJupiter = () => {
+      if ((window as any).Jupiter) {
+        (window as any).Jupiter.init({
+          displayMode: "integrated",
+          integratedTargetId: "jupiter-terminal",
+          endpoint: "https://api.mainnet-beta.solana.com",
+          formProps: {
+            fixedOutputMint: true,
+            initialOutputMint: BAGS_MINT,
+          },
+        });
+      }
+    };
+
+    if (document.querySelector('script[src*="terminal.jup.ag"]')) {
+      initJupiter();
+      return;
+    }
+
+    const script = document.createElement("script");
+    script.src = "https://terminal.jup.ag/main-v3.js";
+    script.async = true;
+    script.onload = initJupiter;
+    document.head.appendChild(script);
+  }, []);
+
   useEffect(() => {
     const fetchPage = async () => {
       if (!username) { setNotFound(true); setLoading(false); return; }
