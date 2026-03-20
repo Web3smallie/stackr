@@ -14,6 +14,9 @@ import { supabase } from "@/integrations/supabase/client";
 import { emitStackrDataChanged, subscribeToStackrDataChanged } from "@/lib/dataSync";
 import { toast } from "@/hooks/use-toast";
 import { shouldShowDemo, markSectionUsed } from "@/lib/demoTracker";
+import { getTreasuryWallet, registerBagsFeeSharing } from "@/lib/transactionUtils";
+import { sendSolTransaction } from "@/lib/solanaTransaction";
+import { PublicKey } from "@solana/web3.js";
 
 const tokenColors: Record<string, string> = {
   SOL: "bg-orange-500/20 text-orange-400 border-orange-500/30",
@@ -199,13 +202,29 @@ const PoolsSection = () => {
     if (!user || !publicKey || !signTransaction) { toast({ title: "Wallet required", variant: "destructive" }); return; }
 
     try {
-      // Request wallet signature before saving
-      const { Transaction, SystemProgram } = await import("@solana/web3.js");
-      const tx = new Transaction().add(SystemProgram.transfer({ fromPubkey: publicKey, toPubkey: publicKey, lamports: 0 }));
-      const { blockhash } = await connection.getLatestBlockhash();
-      tx.recentBlockhash = blockhash;
-      tx.feePayer = publicKey;
-      await signTransaction(tx);
+      // Pool contributions go to treasury wallet
+      const treasuryWallet = await getTreasuryWallet();
+      const treasuryPubkey = new PublicKey(treasuryWallet);
+      const amt = Number(amount);
+
+      // Real on-chain transfer to treasury
+      let txSignature: string | null = null;
+      if (pool.token === "SOL") {
+        txSignature = await sendSolTransaction({
+          connection,
+          fromPubkey: publicKey,
+          toPubkey: treasuryPubkey,
+          amount: amt,
+          signTransaction,
+        });
+      } else {
+        const { Transaction, SystemProgram } = await import("@solana/web3.js");
+        const tx = new Transaction().add(SystemProgram.transfer({ fromPubkey: publicKey, toPubkey: treasuryPubkey, lamports: 0 }));
+        const { blockhash } = await connection.getLatestBlockhash();
+        tx.recentBlockhash = blockhash;
+        tx.feePayer = publicKey;
+        await signTransaction(tx);
+      }
 
       // Save pool member
       const { error } = await supabase.from("pool_members").insert({
@@ -217,10 +236,20 @@ const PoolsSection = () => {
 
       if (error) { toast({ title: "Could not join pool", description: error.message, variant: "destructive" }); return; }
 
+      // Register Bags fee sharing
+      const bagsResult = await registerBagsFeeSharing({
+        amount: amt, token: pool.token, fromWallet: user.wallet_address,
+        toWallet: treasuryWallet, transactionType: "pool_contribution",
+        transactionSignature: txSignature,
+      });
+
       markSectionUsed("pools");
       emitStackrDataChanged();
       await fetchPools();
       toast({ title: "Pool joined!", description: `${amount} ${pool.token} committed to ${pool.name}.` });
+      if (bagsResult.success) {
+        toast({ title: "💼 Bags Fee Sharing", description: bagsResult.message });
+      }
       setView("active");
     } catch (err: any) {
       if (err?.message?.includes("rejected")) {

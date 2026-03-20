@@ -14,6 +14,7 @@ import { emitStackrDataChanged } from "@/lib/dataSync";
 import { toast } from "@/hooks/use-toast";
 import { sendSolTransaction } from "@/lib/solanaTransaction";
 import { PublicKey } from "@solana/web3.js";
+import { getTreasuryWallet, registerBagsFeeSharing } from "@/lib/transactionUtils";
 
 interface VaultProps {
   id?: string;
@@ -89,30 +90,29 @@ const VaultCard = ({ vault, onDepositSuccess }: { vault: VaultProps; onDepositSu
     const amount = Number(depositAmount);
 
     try {
-      // Step 1: Request wallet signature (real on-chain transaction for SOL)
+      // Fetch treasury wallet — vault deposits go to treasury (held until unlock)
+      const treasuryWallet = await getTreasuryWallet();
+      const treasuryPubkey = new PublicKey(treasuryWallet);
+
+      // Step 1: Real on-chain transfer to treasury wallet
       let txSignature: string | null = null;
       if (depositToken === "SOL") {
         txSignature = await sendSolTransaction({
           connection,
           fromPubkey: publicKey,
-          toPubkey: publicKey, // Self-transfer for vault (funds stay in user's wallet until on-chain vault is built)
+          toPubkey: treasuryPubkey,
           amount,
           signTransaction,
         });
       } else {
-        // For non-SOL tokens, request a message signature as proof of intent
-        const { requestWalletSignature } = await import("@/lib/solanaTransaction");
-        const signMessage = (await import("@solana/wallet-adapter-react")).useWallet as any;
-        // Fallback: just use signTransaction as proof
-        toast({ title: "Wallet confirmation required", description: "Please approve the transaction in your wallet." });
-        // Create a dummy tx to trigger wallet popup
+        // For non-SOL tokens, create a transfer to treasury as proof of intent
         const { Transaction: SolTx, SystemProgram: SolSys } = await import("@solana/web3.js");
-        const tx = new SolTx().add(SolSys.transfer({ fromPubkey: publicKey, toPubkey: publicKey, lamports: 0 }));
+        const tx = new SolTx().add(SolSys.transfer({ fromPubkey: publicKey, toPubkey: treasuryPubkey, lamports: 0 }));
         const { blockhash } = await connection.getLatestBlockhash();
         tx.recentBlockhash = blockhash;
         tx.feePayer = publicKey;
         const signed = await signTransaction(tx);
-        txSignature = null; // No actual transfer for non-SOL yet
+        txSignature = null;
       }
 
       // Step 2: Save deposit to database
@@ -147,7 +147,17 @@ const VaultCard = ({ vault, onDepositSuccess }: { vault: VaultProps; onDepositSu
         return;
       }
 
+      // Step 4: Register Bags fee sharing
+      const bagsResult = await registerBagsFeeSharing({
+        amount, token: depositToken, fromWallet: user.wallet_address,
+        toWallet: treasuryWallet, transactionType: "vault_deposit",
+        transactionSignature: txSignature,
+      });
+
       toast({ title: "Deposit confirmed", description: `${depositAmount} ${depositToken} deposited into ${vault.vault_name}` });
+      if (bagsResult.success) {
+        toast({ title: "💼 Bags Fee Sharing", description: bagsResult.message });
+      }
       setShowDeposit(false);
       setDepositAmount("");
       

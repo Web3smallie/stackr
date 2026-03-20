@@ -13,6 +13,9 @@ import { emitStackrDataChanged } from "@/lib/dataSync";
 import { toast } from "@/hooks/use-toast";
 import DemoBadge from "@/components/DemoBadge";
 import { shouldShowDemo, markSectionUsed } from "@/lib/demoTracker";
+import { getTreasuryWallet, registerBagsFeeSharing } from "@/lib/transactionUtils";
+import { sendSolTransaction } from "@/lib/solanaTransaction";
+import { PublicKey } from "@solana/web3.js";
 
 const tokenColors: Record<string, string> = {
   SOL: "bg-orange-500/20 text-orange-400 border-orange-500/30",
@@ -116,15 +119,40 @@ const FundraisingSection = () => {
 
     setContributing(true);
     try {
-      // Wallet signature required
-      const { Transaction, SystemProgram } = await import("@solana/web3.js");
-      const tx = new Transaction().add(SystemProgram.transfer({ fromPubkey: publicKey, toPubkey: publicKey, lamports: 0 }));
-      const { blockhash } = await connection.getLatestBlockhash();
-      tx.recentBlockhash = blockhash;
-      tx.feePayer = publicKey;
-      await signTransaction(tx);
+      // Fundraising contributions go to treasury wallet (held until goal is reached)
+      const treasuryWallet = await getTreasuryWallet();
+      const treasuryPubkey = new PublicKey(treasuryWallet);
+      const amt = Number(contributionAmount);
+
+      let txSignature: string | null = null;
+      if (contributionToken === "SOL") {
+        txSignature = await sendSolTransaction({
+          connection,
+          fromPubkey: publicKey,
+          toPubkey: treasuryPubkey,
+          amount: amt,
+          signTransaction,
+        });
+      } else {
+        const { Transaction, SystemProgram } = await import("@solana/web3.js");
+        const tx = new Transaction().add(SystemProgram.transfer({ fromPubkey: publicKey, toPubkey: treasuryPubkey, lamports: 0 }));
+        const { blockhash } = await connection.getLatestBlockhash();
+        tx.recentBlockhash = blockhash;
+        tx.feePayer = publicKey;
+        await signTransaction(tx);
+      }
+
+      // Register Bags fee sharing
+      const bagsResult = await registerBagsFeeSharing({
+        amount: amt, token: contributionToken, fromWallet: publicKey.toBase58(),
+        toWallet: treasuryWallet, transactionType: "fundraising_contribution",
+        transactionSignature: txSignature,
+      });
 
       toast({ title: "Contribution sent!", description: `${contributionAmount} ${contributionToken} sent to ${showContributeGoal.title}.` });
+      if (bagsResult.success) {
+        toast({ title: "💼 Bags Fee Sharing", description: bagsResult.message });
+      }
       setShowContributeGoal(null);
       setContributionAmount("");
     } catch (err: any) {

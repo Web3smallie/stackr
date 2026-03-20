@@ -39,9 +39,9 @@ serve(async (req) => {
       rpcUrl: SOLANA_RPC_URL,
     };
 
-    // If paying with BAGS token, register with Bags.fm for fee sharing
+    // Register with Bags.fm for fee sharing on ALL transactions
     let bagsFeeSharingResult = null;
-    if (token === "BAGS" && BAGS_API_KEY) {
+    if (BAGS_API_KEY) {
       try {
         const bagsResponse = await fetch("https://api.bags.fm/v1/fee-sharing/register", {
           method: "POST",
@@ -55,6 +55,8 @@ serve(async (req) => {
             fee_amount: platformFee,
             from_wallet,
             to_wallet,
+            token,
+            transaction_type: "creator_payment",
             timestamp: new Date().toISOString(),
           }),
         });
