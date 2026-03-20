@@ -379,40 +379,6 @@ const PaymentPage = () => {
           </div>
         </div>
         </div>
-
-        {/* Right: Jupiter Swap Widget */}
-        <div className="w-full lg:w-[380px] shrink-0">
-          <div className="text-center mb-3">
-            <p className="text-2xl font-extrabold tracking-tight" style={{ color: "#9333EA" }}>
-              Support the Bags.fm ecosystem
-            </p>
-            <p className="text-lg font-semibold mt-1" style={{ color: "#C084FC" }}>
-              Swap here to pay with BAGS
-            </p>
-          </div>
-          <div
-            className="rounded-2xl border-2 bg-card overflow-hidden"
-            style={{
-              borderColor: "hsl(270 91% 55% / 0.5)",
-              boxShadow: "0 0 24px hsl(270 91% 55% / 0.3), 0 0 48px hsl(270 91% 55% / 0.12), 0 4px 16px rgba(0,0,0,0.4)",
-            }}
-          >
-            {!jupiterFailed ? (
-              <div id="jupiter-terminal" style={{ maxHeight: "300px", overflow: "auto" }} />
-            ) : (
-              <div className="flex flex-col items-center justify-center p-6" style={{ height: "300px" }}>
-                <p className="text-sm text-muted-foreground mb-3 text-center">
-                  Swap widget unavailable — open Jupiter directly
-                </p>
-                <a href="https://jup.ag/swap/SOL-BAGS" target="_blank" rel="noopener noreferrer">
-                  <Button className="font-semibold" style={{ backgroundColor: "#9333EA" }}>
-                    Swap to BAGS on Jupiter ↗
-                  </Button>
-                </a>
-              </div>
-            )}
-          </div>
-        </div>
       </div>
     </div>
   );
