@@ -130,12 +130,12 @@ const PaymentPage = () => {
         })
       );
 
-      // Platform fee transfer (1%)
+      // Platform fee transfer (0.5% to treasury — other 0.5% handled via Bags API)
       transaction.add(
         SystemProgram.transfer({
           fromPubkey: publicKey,
           toPubkey: treasuryPubkey,
-          lamports: Math.round(platformFee * LAMPORTS_PER_SOL),
+          lamports: Math.round(treasuryFee * LAMPORTS_PER_SOL),
         })
       );
 
