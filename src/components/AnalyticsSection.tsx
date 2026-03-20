@@ -6,6 +6,7 @@ import DemoBadge from "@/components/DemoBadge";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
 import { subscribeToStackrDataChanged } from "@/lib/dataSync";
+import { shouldShowDemo } from "@/lib/demoTracker";
 
 const tokenColors: Record<string, string> = {
   SOL: "bg-orange-500/20 text-orange-400 border-orange-500/30",
@@ -25,23 +26,14 @@ const AnalyticsSection = () => {
 
   const fetchAnalytics = useCallback(async () => {
     if (!user) return;
-    const { data: payments } = await supabase
-      .from("payments")
-      .select("amount, token, from_wallet")
-      .eq("to_wallet", user.wallet_address)
-      .eq("status", "confirmed");
-
+    const { data: payments } = await supabase.from("payments").select("amount, token, from_wallet").eq("to_wallet", user.wallet_address).eq("status", "confirmed");
     if (payments && payments.length > 0) {
       setHasRealData(true);
-      const total = payments.reduce((sum, p) => sum + Number(p.amount), 0);
-      setTotalRevenue(total);
-      const uniqueWallets = new Set(payments.map((p) => p.from_wallet));
-      setTotalSupporters(uniqueWallets.size);
-      // Most common token
+      setTotalRevenue(payments.reduce((sum, p) => sum + Number(p.amount), 0));
+      setTotalSupporters(new Set(payments.map((p) => p.from_wallet)).size);
       const tokenCounts: Record<string, number> = {};
       payments.forEach((p) => { tokenCounts[p.token] = (tokenCounts[p.token] || 0) + 1; });
-      const topToken = Object.entries(tokenCounts).sort((a, b) => b[1] - a[1])[0]?.[0] || "SOL";
-      setRevenueToken(topToken);
+      setRevenueToken(Object.entries(tokenCounts).sort((a, b) => b[1] - a[1])[0]?.[0] || "SOL");
     } else {
       setHasRealData(false);
     }
@@ -49,6 +41,8 @@ const AnalyticsSection = () => {
 
   useEffect(() => { void fetchAnalytics(); }, [fetchAnalytics]);
   useEffect(() => subscribeToStackrDataChanged(() => { void fetchAnalytics(); }), [fetchAnalytics]);
+
+  const showDemo = shouldShowDemo("analytics", hasRealData);
 
   const weeklyData = demoWeeklyData;
   const maxViews = Math.max(...weeklyData.map((item) => item.views));
@@ -72,7 +66,7 @@ const AnalyticsSection = () => {
       <div className="mb-6">
         <h2 className="font-display text-2xl font-bold text-foreground flex items-center gap-2">
           <BarChart3 className="w-6 h-6 text-primary" />Analytics
-          {!hasRealData && <DemoBadge className="ml-2" />}
+          {showDemo && <DemoBadge className="ml-2" />}
         </h2>
         <p className="text-sm text-muted-foreground mt-1">Views, conversion, revenue, top supporters and token mix.</p>
       </div>
@@ -87,7 +81,7 @@ const AnalyticsSection = () => {
           ))}
         </div>
 
-        {!hasRealData && (
+        {showDemo && (
           <>
             <div className="rounded-2xl border border-border bg-card p-6 mb-6">
               <h3 className="font-display text-base font-semibold text-foreground mb-4">Page Views Over Time</h3>
