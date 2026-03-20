@@ -156,7 +156,7 @@ const PaymentPage = () => {
     } finally {
       setSending(false);
     }
-  }, [connected, finalAmount, creator, publicKey, signTransaction, selectedToken, message, page, connection, setVisible, creatorAmount, platformFee]);
+  }, [connected, finalAmount, creator, publicKey, signTransaction, selectedToken, message, page, connection, setVisible, creatorAmount, platformFee, treasuryFee]);
 
   const handleShare = async () => {
     const text = `I just supported ${creator?.display_name || creator?.username || "a creator"} on STACKR! 🚀`;
