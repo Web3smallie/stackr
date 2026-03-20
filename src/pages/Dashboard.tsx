@@ -392,7 +392,7 @@ const Dashboard = () => {
       {mobileMenuOpen && (
         <div className="fixed inset-0 z-40 bg-background/95 backdrop-blur-sm md:hidden">
           <div className="flex items-center justify-between px-4 h-16 border-b border-border">
-            <span className="font-display text-xl font-bold text-foreground">STACKR</span>
+            <span className="font-display text-xl font-bold text-foreground cursor-pointer" onClick={() => { setMobileMenuOpen(false); navigate("/"); }}>STACKR</span>
             <Button variant="ghost" size="icon" onClick={() => setMobileMenuOpen(false)}>
               <X className="w-5 h-5" />
             </Button>

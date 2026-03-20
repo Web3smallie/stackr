@@ -83,7 +83,10 @@ const LandingPage = () => {
             </div>
             <span className="font-display text-xl font-bold text-foreground">STACKR</span>
           </div>
-          <Button size="sm" onClick={() => navigate("/dashboard")}>Dashboard</Button>
+          <Button size="sm" onClick={() => navigate("/dashboard")} className="gap-2">
+            <ArrowRight className="w-4 h-4" />
+            Launch App
+          </Button>
         </div>
       </header>
 
