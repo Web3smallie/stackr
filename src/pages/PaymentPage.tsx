@@ -145,8 +145,15 @@ const PaymentPage = () => {
       transaction.feePayer = publicKey;
 
       const signed = await signTransaction(transaction);
-      const signature = await connection.sendRawTransaction(signed.serialize());
-      await connection.confirmTransaction(signature, "confirmed");
+      const signature = await connection.sendRawTransaction(signed.serialize(), {
+        skipPreflight: false,
+        preflightCommitment: "confirmed",
+      });
+      
+      const confirmation = await connection.confirmTransaction(signature, "confirmed");
+      if (confirmation.value.err) {
+        throw new Error(`Transaction failed on-chain: ${JSON.stringify(confirmation.value.err)}`);
+      }
 
       setTxSignature(signature);
       setSuccess(true);
