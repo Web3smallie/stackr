@@ -1,6 +1,6 @@
 import { motion } from "framer-motion";
 import {
-  TrendingUp, Vault, Users, ArrowDownUp, Plus, Link2, UserPlus, Sparkles, ArrowRight,
+  TrendingUp, Vault, Users, ArrowDownUp, ArrowRight, Sparkles,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useAuth, truncateWallet } from "@/contexts/AuthContext";

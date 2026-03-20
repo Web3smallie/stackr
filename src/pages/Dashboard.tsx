@@ -18,7 +18,6 @@ import {
   Plus,
   Sparkles,
   Menu,
-  X,
 } from "lucide-react";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
