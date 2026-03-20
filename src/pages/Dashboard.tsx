@@ -290,7 +290,8 @@ const Dashboard = () => {
   };
 
   const hasRealVaults = vaults.length > 0;
-  const displayVaults: VaultData[] = hasRealVaults ? vaults : [demoVault];
+  const showVaultDemo = shouldShowDemo("vaults", hasRealVaults);
+  const displayVaults: VaultData[] = showVaultDemo ? [demoVault] : (hasRealVaults ? vaults : []);
 
   // Connect wallet page with signature verification modal overlay
   if (!connected) {
