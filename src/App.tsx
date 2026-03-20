@@ -23,6 +23,7 @@ const App = () => (
             <Routes>
               <Route path="/" element={<LandingPage />} />
               <Route path="/dashboard" element={<Dashboard />} />
+              <Route path="/:username" element={<PaymentPage />} />
               <Route path="*" element={<NotFound />} />
             </Routes>
           </BrowserRouter>

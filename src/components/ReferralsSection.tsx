@@ -12,7 +12,7 @@ const leaderboard = [{ rank: 1, wallet: "7xKX...3sU", referrals: 42, earnings: 4
 const ReferralsSection = () => {
   const { user } = useAuth();
   const [copied, setCopied] = useState(false);
-  const refLink = `${APP_DOMAIN}?ref=${user?.username || "user"}`;
+  const refLink = `${APP_URL}?ref=${user?.username || "user"}`;
 
   const copyLink = async () => {
     await navigator.clipboard.writeText(refLink);
