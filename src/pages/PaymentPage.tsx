@@ -55,55 +55,45 @@ const PaymentPage = () => {
   const { setVisible } = useWalletModal();
   const { connection } = useConnection();
 
+  const [jupiterReady, setJupiterReady] = useState(false);
   const [jupiterFailed, setJupiterFailed] = useState(false);
 
-  // Load Jupiter Terminal
+  // Initialize Jupiter Terminal v4
   useEffect(() => {
-    const BAGS_MINT = "JxxWsvm9jHt4ah7DT8nKgpEX2iGRrEPaPjbKMZuk4JG";
-    let timeoutId: ReturnType<typeof setTimeout>;
+    let cancelled = false;
+    let attempts = 0;
+    const maxAttempts = 30; // 15 seconds total
 
-    const initJupiter = () => {
+    const tryInit = () => {
+      if (cancelled) return;
       const win = window as any;
-      if (win.Jupiter) {
+
+      if (win.Jupiter && typeof win.Jupiter.init === "function") {
         try {
           win.Jupiter.init({
             displayMode: "integrated",
             integratedTargetId: "jupiter-terminal",
-            endpoint: "https://api.mainnet-beta.solana.com",
-            formProps: {
-              fixedOutputMint: true,
-              initialOutputMint: BAGS_MINT,
-            },
+            endpoint: "https://mainnet.helius-rpc.com/?api-key=0a08a6e6-5057-47e3-9944-d70a1a26ae41",
+            defaultExplorer: "Solscan",
           });
+          if (!cancelled) setJupiterReady(true);
         } catch {
-          setJupiterFailed(true);
+          if (!cancelled) setJupiterFailed(true);
         }
       } else {
-        setJupiterFailed(true);
+        attempts++;
+        if (attempts >= maxAttempts) {
+          if (!cancelled) setJupiterFailed(true);
+        } else {
+          setTimeout(tryInit, 500);
+        }
       }
     };
 
-    const existingScript = document.querySelector('script[src*="terminal.jup.ag"]');
-    if (existingScript) {
-      if ((window as any).Jupiter) {
-        initJupiter();
-      } else {
-        existingScript.addEventListener("load", () => setTimeout(initJupiter, 500));
-        timeoutId = setTimeout(() => setJupiterFailed(true), 15000);
-      }
-      return () => clearTimeout(timeoutId);
-    }
+    // Start polling after a brief delay for script to load
+    setTimeout(tryInit, 800);
 
-    const script = document.createElement("script");
-    script.src = "https://terminal.jup.ag/main-v3.js";
-    script.async = true;
-    script.onload = () => setTimeout(initJupiter, 500);
-    script.onerror = () => setJupiterFailed(true);
-    document.head.appendChild(script);
-
-    timeoutId = setTimeout(() => setJupiterFailed(true), 15000);
-
-    return () => clearTimeout(timeoutId);
+    return () => { cancelled = true; };
   }, []);
 
   useEffect(() => {
