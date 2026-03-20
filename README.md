@@ -2,11 +2,11 @@ STACKR — Stack Your Earnings. No Bank Required.
 Live App: stackr-two.vercel.app
 Built for the Bags.fm Hackathon 2026 by @web3smaliie
 The Problem
-1.4 billion creators worldwide cannot access PayPal, Stripe, or traditional banking. Whether you're a musician in Nairobi, an artist in Manila, or a developer in Lagos — the global financial system has locked you out. If you have a Solana wallet, you have everything you need. That's what Stackr is built on.
+1.4 billion creators worldwide cannot access PayPal, Stripe, or traditional banking. Whether you're a musician in Nairobi, an artist in Manila, or a developer in Mexico, the global financial system has locked you out. If you have a Solana wallet, you have everything you need. That's what Stackr is built on.
 What is Stackr?
 Stackr is a complete financial super app for creators built on Solana and deeply integrated with Bags.fm. It combines three powerful products into one platform.
-Stackr Pay gives creators a personal payment page they can set up in 60 seconds and share anywhere. Supporters pay directly in SOL, USDC, USDT or Bags tokens — no bank account, no KYC, no borders required.
-Stackr Vault is a goal-based savings tool built on Solana. Creators lock their crypto until a target date — whether saving for a new phone, emergency fund, school fees or business capital. Think PiggyVest, but onchain.
+Stackr Pay gives creators a personal payment page they can set up in 60 seconds and share anywhere. Supporters pay directly in SOL, USDC, USDT or Bags tokens, no bank account, no KYC, no borders required.
+Stackr Vault is a goal-based savings tool built on Solana. Creators lock their crypto until a target date, whether saving for a new phone, emergency fund, school fees or business capital. Think PiggyVest, but onchain.
 Stackr Pool lets communities invest together. Members create or join investment pools, vote on which tokens to buy, and share profits proportionally. Transparent, community-governed and fully onchain.
 Features
 Beyond the three core products, Stackr includes fundraising goals with shareable links, token-gated content that unlocks behind crypto payments, recurring payments for fan subscriptions, revenue analytics, a referral system, QR code payments and an embeddable pay button for external websites.
