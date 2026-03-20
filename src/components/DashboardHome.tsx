@@ -7,7 +7,10 @@ import { useAuth, truncateWallet } from "@/contexts/AuthContext";
 import { useWallet } from "@solana/wallet-adapter-react";
 import { Badge } from "@/components/ui/badge";
 import DemoBadge from "@/components/DemoBadge";
-
+import { supabase } from "@/integrations/supabase/client";
+import { useEffect, useState } from "react";
+import { shouldShowDemo } from "@/lib/demoTracker";
+import { formatDistanceToNow } from "date-fns";
 const item = {
   hidden: { opacity: 0, y: 10 },
   show: { opacity: 1, y: 0, transition: { duration: 0.4, ease: [0.16, 1, 0.3, 1] as [number, number, number, number] } },
