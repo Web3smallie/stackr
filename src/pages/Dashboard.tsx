@@ -108,6 +108,7 @@ const Dashboard = () => {
   const navigate = useNavigate();
   const { user, refreshUser, loading, isNewUser } = useAuth();
   const { connected, publicKey, signMessage } = useWallet();
+  const walletAddress = publicKey?.toBase58() || null;
   const { setVisible } = useWalletModal();
 
   const [activeSection, setActiveSection] = useState("dashboard");
