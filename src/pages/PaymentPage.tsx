@@ -55,34 +55,55 @@ const PaymentPage = () => {
   const { setVisible } = useWalletModal();
   const { connection } = useConnection();
 
+  const [jupiterFailed, setJupiterFailed] = useState(false);
+
   // Load Jupiter Terminal
   useEffect(() => {
     const BAGS_MINT = "JxxWsvm9jHt4ah7DT8nKgpEX2iGRrEPaPjbKMZuk4JG";
+    let timeoutId: ReturnType<typeof setTimeout>;
 
     const initJupiter = () => {
-      if ((window as any).Jupiter) {
-        (window as any).Jupiter.init({
-          displayMode: "integrated",
-          integratedTargetId: "jupiter-terminal",
-          endpoint: "https://api.mainnet-beta.solana.com",
-          formProps: {
-            fixedOutputMint: true,
-            initialOutputMint: BAGS_MINT,
-          },
-        });
+      const win = window as any;
+      if (win.Jupiter) {
+        try {
+          win.Jupiter.init({
+            displayMode: "integrated",
+            integratedTargetId: "jupiter-terminal",
+            endpoint: "https://api.mainnet-beta.solana.com",
+            formProps: {
+              fixedOutputMint: true,
+              initialOutputMint: BAGS_MINT,
+            },
+          });
+        } catch {
+          setJupiterFailed(true);
+        }
+      } else {
+        setJupiterFailed(true);
       }
     };
 
-    if (document.querySelector('script[src*="terminal.jup.ag"]')) {
-      initJupiter();
-      return;
+    const existingScript = document.querySelector('script[src*="terminal.jup.ag"]');
+    if (existingScript) {
+      if ((window as any).Jupiter) {
+        initJupiter();
+      } else {
+        existingScript.addEventListener("load", () => setTimeout(initJupiter, 500));
+        timeoutId = setTimeout(() => setJupiterFailed(true), 15000);
+      }
+      return () => clearTimeout(timeoutId);
     }
 
     const script = document.createElement("script");
     script.src = "https://terminal.jup.ag/main-v3.js";
     script.async = true;
-    script.onload = initJupiter;
+    script.onload = () => setTimeout(initJupiter, 500);
+    script.onerror = () => setJupiterFailed(true);
     document.head.appendChild(script);
+
+    timeoutId = setTimeout(() => setJupiterFailed(true), 15000);
+
+    return () => clearTimeout(timeoutId);
   }, []);
 
   useEffect(() => {
