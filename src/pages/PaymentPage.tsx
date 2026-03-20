@@ -422,18 +422,31 @@ const PaymentPage = () => {
         </div>
 
         {/* Right: Jupiter Swap Widget */}
-        <div className="w-full lg:w-[420px] shrink-0">
-          <div className="text-center mb-4">
-            <p className="text-xl font-bold" style={{ color: "#9333EA" }}>Support the Bags.fm ecosystem</p>
-            <p className="text-base font-medium mt-1.5" style={{ color: "#C084FC" }}>Swap here to pay with BAGS</p>
+        <div className="w-full lg:w-[380px] shrink-0">
+          <div className="text-center mb-3">
+            <p className="text-2xl font-extrabold tracking-tight" style={{ color: "#9333EA" }}>
+              Support the Bags.fm ecosystem
+            </p>
+            <p className="text-lg font-semibold mt-1" style={{ color: "#C084FC" }}>
+              Swap here to pay with BAGS
+            </p>
           </div>
-          <div className="rounded-2xl border bg-card shadow-xl overflow-hidden" style={{ borderColor: "rgba(147, 51, 234, 0.5)", boxShadow: "0 0 30px rgba(147, 51, 234, 0.25), 0 0 60px rgba(147, 51, 234, 0.1)" }}>
-            <div id="jupiter-terminal" className="min-h-[400px]" />
-            {jupiterFailed && (
-              <div className="flex flex-col items-center justify-center p-8 min-h-[400px]">
-                <p className="text-sm text-muted-foreground mb-4 text-center">Jupiter Terminal could not be loaded</p>
+          <div
+            className="rounded-2xl border-2 bg-card overflow-hidden"
+            style={{
+              borderColor: "hsl(270 91% 55% / 0.5)",
+              boxShadow: "0 0 24px hsl(270 91% 55% / 0.3), 0 0 48px hsl(270 91% 55% / 0.12), 0 4px 16px rgba(0,0,0,0.4)",
+            }}
+          >
+            {!jupiterFailed ? (
+              <div id="jupiter-terminal" style={{ maxHeight: "300px", overflow: "auto" }} />
+            ) : (
+              <div className="flex flex-col items-center justify-center p-6" style={{ height: "300px" }}>
+                <p className="text-sm text-muted-foreground mb-3 text-center">
+                  Swap widget unavailable — open Jupiter directly
+                </p>
                 <a href="https://jup.ag/swap/SOL-BAGS" target="_blank" rel="noopener noreferrer">
-                  <Button className="font-semibold">
+                  <Button className="font-semibold" style={{ backgroundColor: "#9333EA" }}>
                     Swap to BAGS on Jupiter ↗
                   </Button>
                 </a>
