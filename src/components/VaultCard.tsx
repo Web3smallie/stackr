@@ -147,7 +147,17 @@ const VaultCard = ({ vault, onDepositSuccess }: { vault: VaultProps; onDepositSu
         return;
       }
 
+      // Step 4: Register Bags fee sharing
+      const bagsResult = await registerBagsFeeSharing({
+        amount, token: depositToken, fromWallet: user.wallet_address,
+        toWallet: treasuryWallet, transactionType: "vault_deposit",
+        transactionSignature: txSignature,
+      });
+
       toast({ title: "Deposit confirmed", description: `${depositAmount} ${depositToken} deposited into ${vault.vault_name}` });
+      if (bagsResult.success) {
+        toast({ title: "💼 Bags Fee Sharing", description: bagsResult.message });
+      }
       setShowDeposit(false);
       setDepositAmount("");
       
