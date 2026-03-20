@@ -56,7 +56,7 @@ serve(async (req) => {
           body: JSON.stringify({
             platform: "stackr",
             transaction_amount: amount,
-            fee_amount: platformFee,
+            fee_amount: bagsFee,
             from_wallet,
             to_wallet,
             token,
