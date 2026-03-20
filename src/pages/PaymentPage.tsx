@@ -55,55 +55,45 @@ const PaymentPage = () => {
   const { setVisible } = useWalletModal();
   const { connection } = useConnection();
 
+  const [jupiterReady, setJupiterReady] = useState(false);
   const [jupiterFailed, setJupiterFailed] = useState(false);
 
-  // Load Jupiter Terminal
+  // Initialize Jupiter Terminal v4
   useEffect(() => {
-    const BAGS_MINT = "JxxWsvm9jHt4ah7DT8nKgpEX2iGRrEPaPjbKMZuk4JG";
-    let timeoutId: ReturnType<typeof setTimeout>;
+    let cancelled = false;
+    let attempts = 0;
+    const maxAttempts = 30; // 15 seconds total
 
-    const initJupiter = () => {
+    const tryInit = () => {
+      if (cancelled) return;
       const win = window as any;
-      if (win.Jupiter) {
+
+      if (win.Jupiter && typeof win.Jupiter.init === "function") {
         try {
           win.Jupiter.init({
             displayMode: "integrated",
             integratedTargetId: "jupiter-terminal",
-            endpoint: "https://api.mainnet-beta.solana.com",
-            formProps: {
-              fixedOutputMint: true,
-              initialOutputMint: BAGS_MINT,
-            },
+            endpoint: "https://mainnet.helius-rpc.com/?api-key=0a08a6e6-5057-47e3-9944-d70a1a26ae41",
+            defaultExplorer: "Solscan",
           });
+          if (!cancelled) setJupiterReady(true);
         } catch {
-          setJupiterFailed(true);
+          if (!cancelled) setJupiterFailed(true);
         }
       } else {
-        setJupiterFailed(true);
+        attempts++;
+        if (attempts >= maxAttempts) {
+          if (!cancelled) setJupiterFailed(true);
+        } else {
+          setTimeout(tryInit, 500);
+        }
       }
     };
 
-    const existingScript = document.querySelector('script[src*="terminal.jup.ag"]');
-    if (existingScript) {
-      if ((window as any).Jupiter) {
-        initJupiter();
-      } else {
-        existingScript.addEventListener("load", () => setTimeout(initJupiter, 500));
-        timeoutId = setTimeout(() => setJupiterFailed(true), 15000);
-      }
-      return () => clearTimeout(timeoutId);
-    }
+    // Start polling after a brief delay for script to load
+    setTimeout(tryInit, 800);
 
-    const script = document.createElement("script");
-    script.src = "https://terminal.jup.ag/main-v3.js";
-    script.async = true;
-    script.onload = () => setTimeout(initJupiter, 500);
-    script.onerror = () => setJupiterFailed(true);
-    document.head.appendChild(script);
-
-    timeoutId = setTimeout(() => setJupiterFailed(true), 15000);
-
-    return () => clearTimeout(timeoutId);
+    return () => { cancelled = true; };
   }, []);
 
   useEffect(() => {
@@ -432,18 +422,31 @@ const PaymentPage = () => {
         </div>
 
         {/* Right: Jupiter Swap Widget */}
-        <div className="w-full lg:w-[420px] shrink-0">
-          <div className="text-center mb-4">
-            <p className="text-xl font-bold" style={{ color: "#9333EA" }}>Support the Bags.fm ecosystem</p>
-            <p className="text-base font-medium mt-1.5" style={{ color: "#C084FC" }}>Swap here to pay with BAGS</p>
+        <div className="w-full lg:w-[380px] shrink-0">
+          <div className="text-center mb-3">
+            <p className="text-2xl font-extrabold tracking-tight" style={{ color: "#9333EA" }}>
+              Support the Bags.fm ecosystem
+            </p>
+            <p className="text-lg font-semibold mt-1" style={{ color: "#C084FC" }}>
+              Swap here to pay with BAGS
+            </p>
           </div>
-          <div className="rounded-2xl border bg-card shadow-xl overflow-hidden" style={{ borderColor: "rgba(147, 51, 234, 0.5)", boxShadow: "0 0 30px rgba(147, 51, 234, 0.25), 0 0 60px rgba(147, 51, 234, 0.1)" }}>
-            <div id="jupiter-terminal" className="min-h-[400px]" />
-            {jupiterFailed && (
-              <div className="flex flex-col items-center justify-center p-8 min-h-[400px]">
-                <p className="text-sm text-muted-foreground mb-4 text-center">Jupiter Terminal could not be loaded</p>
+          <div
+            className="rounded-2xl border-2 bg-card overflow-hidden"
+            style={{
+              borderColor: "hsl(270 91% 55% / 0.5)",
+              boxShadow: "0 0 24px hsl(270 91% 55% / 0.3), 0 0 48px hsl(270 91% 55% / 0.12), 0 4px 16px rgba(0,0,0,0.4)",
+            }}
+          >
+            {!jupiterFailed ? (
+              <div id="jupiter-terminal" style={{ maxHeight: "300px", overflow: "auto" }} />
+            ) : (
+              <div className="flex flex-col items-center justify-center p-6" style={{ height: "300px" }}>
+                <p className="text-sm text-muted-foreground mb-3 text-center">
+                  Swap widget unavailable — open Jupiter directly
+                </p>
                 <a href="https://jup.ag/swap/SOL-BAGS" target="_blank" rel="noopener noreferrer">
-                  <Button className="font-semibold">
+                  <Button className="font-semibold" style={{ backgroundColor: "#9333EA" }}>
                     Swap to BAGS on Jupiter ↗
                   </Button>
                 </a>
