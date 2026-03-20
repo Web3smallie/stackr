@@ -44,6 +44,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { Input } from "@/components/ui/input";
 import { toast } from "@/hooks/use-toast";
 import { emitStackrDataChanged, subscribeToStackrDataChanged } from "@/lib/dataSync";
+import { shouldShowDemo, markSectionUsed } from "@/lib/demoTracker";
 
 const sidebarLinks = [
   { icon: LayoutDashboard, label: "Dashboard", section: "dashboard" },
