@@ -22,20 +22,20 @@ function timeAgo(dateStr: string): string {
 
 function getLabel(type: string, amount: number, token: string, time: string): string {
   const t = timeAgo(time);
-  const amt = amount > 0 ? `${amount} ${token}` : "";
+  const amt = amount > 0 ? `${Number(amount.toFixed(4))} ${token}` : "";
   switch (type) {
     case "payment_received":
       return `A creator received ${amt} · ${t}`;
     case "payment_sent":
       return `A creator sent ${amt} · ${t}`;
     case "vault_deposit":
-      return `A creator deposited into a vault · ${t}`;
+      return amt ? `A creator deposited ${amt} into a vault · ${t}` : `A creator deposited into a vault · ${t}`;
     case "vault_completed":
-      return `A creator reached their vault goal · ${t}`;
+      return amt ? `A creator completed a ${amt} vault · ${t}` : `A creator reached their vault goal · ${t}`;
     case "pool_contribution":
-      return `A creator joined a pool · ${t}`;
+      return amt ? `A creator contributed ${amt} to a pool · ${t}` : `A creator joined a pool · ${t}`;
     case "fundraising_update":
-      return `A creator reached their fundraising goal · ${t}`;
+      return amt ? `A creator raised ${amt} for a goal · ${t}` : `A creator reached their fundraising goal · ${t}`;
     case "token_gate_unlock":
       return `A creator unlocked content · ${t}`;
     default:
