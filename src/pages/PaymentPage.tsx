@@ -55,34 +55,55 @@ const PaymentPage = () => {
   const { setVisible } = useWalletModal();
   const { connection } = useConnection();
 
+  const [jupiterFailed, setJupiterFailed] = useState(false);
+
   // Load Jupiter Terminal
   useEffect(() => {
     const BAGS_MINT = "JxxWsvm9jHt4ah7DT8nKgpEX2iGRrEPaPjbKMZuk4JG";
+    let timeoutId: ReturnType<typeof setTimeout>;
 
     const initJupiter = () => {
-      if ((window as any).Jupiter) {
-        (window as any).Jupiter.init({
-          displayMode: "integrated",
-          integratedTargetId: "jupiter-terminal",
-          endpoint: "https://api.mainnet-beta.solana.com",
-          formProps: {
-            fixedOutputMint: true,
-            initialOutputMint: BAGS_MINT,
-          },
-        });
+      const win = window as any;
+      if (win.Jupiter) {
+        try {
+          win.Jupiter.init({
+            displayMode: "integrated",
+            integratedTargetId: "jupiter-terminal",
+            endpoint: "https://api.mainnet-beta.solana.com",
+            formProps: {
+              fixedOutputMint: true,
+              initialOutputMint: BAGS_MINT,
+            },
+          });
+        } catch {
+          setJupiterFailed(true);
+        }
+      } else {
+        setJupiterFailed(true);
       }
     };
 
-    if (document.querySelector('script[src*="terminal.jup.ag"]')) {
-      initJupiter();
-      return;
+    const existingScript = document.querySelector('script[src*="terminal.jup.ag"]');
+    if (existingScript) {
+      if ((window as any).Jupiter) {
+        initJupiter();
+      } else {
+        existingScript.addEventListener("load", () => setTimeout(initJupiter, 500));
+        timeoutId = setTimeout(() => setJupiterFailed(true), 15000);
+      }
+      return () => clearTimeout(timeoutId);
     }
 
     const script = document.createElement("script");
     script.src = "https://terminal.jup.ag/main-v3.js";
     script.async = true;
-    script.onload = initJupiter;
+    script.onload = () => setTimeout(initJupiter, 500);
+    script.onerror = () => setJupiterFailed(true);
     document.head.appendChild(script);
+
+    timeoutId = setTimeout(() => setJupiterFailed(true), 15000);
+
+    return () => clearTimeout(timeoutId);
   }, []);
 
   useEffect(() => {
@@ -413,11 +434,21 @@ const PaymentPage = () => {
         {/* Right: Jupiter Swap Widget */}
         <div className="w-full lg:w-[420px] shrink-0">
           <div className="text-center mb-4">
-            <p className="text-sm font-semibold text-foreground">Support the Bags.fm ecosystem</p>
-            <p className="text-xs text-muted-foreground mt-1">Swap here to pay with BAGS</p>
+            <p className="text-xl font-bold" style={{ color: "#9333EA" }}>Support the Bags.fm ecosystem</p>
+            <p className="text-base font-medium mt-1.5" style={{ color: "#C084FC" }}>Swap here to pay with BAGS</p>
           </div>
-          <div className="rounded-2xl border border-border bg-card shadow-xl overflow-hidden">
+          <div className="rounded-2xl border bg-card shadow-xl overflow-hidden" style={{ borderColor: "rgba(147, 51, 234, 0.5)", boxShadow: "0 0 30px rgba(147, 51, 234, 0.25), 0 0 60px rgba(147, 51, 234, 0.1)" }}>
             <div id="jupiter-terminal" className="min-h-[400px]" />
+            {jupiterFailed && (
+              <div className="flex flex-col items-center justify-center p-8 min-h-[400px]">
+                <p className="text-sm text-muted-foreground mb-4 text-center">Jupiter Terminal could not be loaded</p>
+                <a href="https://jup.ag/swap/SOL-BAGS" target="_blank" rel="noopener noreferrer">
+                  <Button className="font-semibold">
+                    Swap to BAGS on Jupiter ↗
+                  </Button>
+                </a>
+              </div>
+            )}
           </div>
         </div>
       </div>
