@@ -334,6 +334,16 @@ const PaymentPage = () => {
                 <span>Platform fee (1%)</span>
                 <span>{platformFee.toFixed(4)} {selectedToken}</span>
               </div>
+              <div className="pl-3 space-y-0.5 text-[11px] text-muted-foreground/70">
+                <div className="flex justify-between">
+                  <span>↳ Treasury (0.5%)</span>
+                  <span>{treasuryFee.toFixed(4)} {selectedToken}</span>
+                </div>
+                <div className="flex justify-between">
+                  <span>↳ Bags.fm (0.5%)</span>
+                  <span>{bagsFee.toFixed(4)} {selectedToken}</span>
+                </div>
+              </div>
               <div className="flex justify-between font-semibold text-foreground border-t border-border pt-1 mt-1">
                 <span>Total</span>
                 <span>{finalAmount} {selectedToken}</span>
