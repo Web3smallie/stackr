@@ -225,9 +225,9 @@ const MyStacksSection = () => {
                 {!isDemo && showQR === stack.id && (
                   <motion.div initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: "auto" }} className="mt-4 p-4 rounded-xl bg-secondary border border-border text-center">
                     <div ref={qrContainerRef} className="w-48 h-48 mx-auto rounded-2xl bg-background border border-primary/30 flex items-center justify-center mb-3 p-3 shadow-[0_0_22px_hsl(var(--primary)/0.18)]">
-                      <QRCodeSVG value={`https://getstackr.app/${stack.slug}`} size={160} bgColor="#1A0533" fgColor="#FFFFFF" includeMargin />
+                      <QRCodeSVG value={`${APP_URL}/${stack.slug}`} size={160} bgColor="#1A0533" fgColor="#FFFFFF" includeMargin />
                     </div>
-                    <p className="text-xs text-muted-foreground mb-3">getstackr.app/{stack.slug}</p>
+                    <p className="text-xs text-muted-foreground mb-3">{APP_DOMAIN}/{stack.slug}</p>
                     <Button size="sm" onClick={() => downloadQR(stack.slug)}><Download className="w-4 h-4 mr-1" />Download PNG</Button>
                   </motion.div>
                 )}
