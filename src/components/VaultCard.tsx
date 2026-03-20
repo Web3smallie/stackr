@@ -14,6 +14,7 @@ import { emitStackrDataChanged } from "@/lib/dataSync";
 import { toast } from "@/hooks/use-toast";
 import { sendSolTransaction } from "@/lib/solanaTransaction";
 import { PublicKey } from "@solana/web3.js";
+import { getTreasuryWallet, registerBagsFeeSharing } from "@/lib/transactionUtils";
 
 interface VaultProps {
   id?: string;
