@@ -202,13 +202,29 @@ const PoolsSection = () => {
     if (!user || !publicKey || !signTransaction) { toast({ title: "Wallet required", variant: "destructive" }); return; }
 
     try {
-      // Request wallet signature before saving
-      const { Transaction, SystemProgram } = await import("@solana/web3.js");
-      const tx = new Transaction().add(SystemProgram.transfer({ fromPubkey: publicKey, toPubkey: publicKey, lamports: 0 }));
-      const { blockhash } = await connection.getLatestBlockhash();
-      tx.recentBlockhash = blockhash;
-      tx.feePayer = publicKey;
-      await signTransaction(tx);
+      // Pool contributions go to treasury wallet
+      const treasuryWallet = await getTreasuryWallet();
+      const treasuryPubkey = new PublicKey(treasuryWallet);
+      const amt = Number(amount);
+
+      // Real on-chain transfer to treasury
+      let txSignature: string | null = null;
+      if (pool.token === "SOL") {
+        txSignature = await sendSolTransaction({
+          connection,
+          fromPubkey: publicKey,
+          toPubkey: treasuryPubkey,
+          amount: amt,
+          signTransaction,
+        });
+      } else {
+        const { Transaction, SystemProgram } = await import("@solana/web3.js");
+        const tx = new Transaction().add(SystemProgram.transfer({ fromPubkey: publicKey, toPubkey: treasuryPubkey, lamports: 0 }));
+        const { blockhash } = await connection.getLatestBlockhash();
+        tx.recentBlockhash = blockhash;
+        tx.feePayer = publicKey;
+        await signTransaction(tx);
+      }
 
       // Save pool member
       const { error } = await supabase.from("pool_members").insert({
