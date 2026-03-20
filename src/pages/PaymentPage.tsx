@@ -55,6 +55,36 @@ const PaymentPage = () => {
   const { setVisible } = useWalletModal();
   const { connection } = useConnection();
 
+  // Load Jupiter Terminal
+  useEffect(() => {
+    const BAGS_MINT = "JxxWsvm9jHt4ah7DT8nKgpEX2iGRrEPaPjbKMZuk4JG";
+
+    const initJupiter = () => {
+      if ((window as any).Jupiter) {
+        (window as any).Jupiter.init({
+          displayMode: "integrated",
+          integratedTargetId: "jupiter-terminal",
+          endpoint: "https://api.mainnet-beta.solana.com",
+          formProps: {
+            fixedOutputMint: true,
+            initialOutputMint: BAGS_MINT,
+          },
+        });
+      }
+    };
+
+    if (document.querySelector('script[src*="terminal.jup.ag"]')) {
+      initJupiter();
+      return;
+    }
+
+    const script = document.createElement("script");
+    script.src = "https://terminal.jup.ag/main-v3.js";
+    script.async = true;
+    script.onload = initJupiter;
+    document.head.appendChild(script);
+  }, []);
+
   useEffect(() => {
     const fetchPage = async () => {
       if (!username) { setNotFound(true); setLoading(false); return; }
@@ -245,7 +275,9 @@ const PaymentPage = () => {
 
   return (
     <div className="min-h-screen bg-background flex items-center justify-center p-4">
-      <div className="w-full max-w-md">
+      <div className="w-full max-w-6xl flex flex-col lg:flex-row gap-6 items-start justify-center">
+        {/* Left: Payment Form */}
+        <div className="w-full lg:w-[420px] shrink-0">
         <div className="rounded-2xl border border-border bg-card p-6 shadow-xl">
           {/* Creator info */}
           <div className="text-center mb-6">
@@ -374,6 +406,18 @@ const PaymentPage = () => {
             <Link to="/" className="text-xs text-muted-foreground hover:text-accent transition-colors inline-flex items-center gap-1">
               Powered by STACKR <ExternalLink className="w-3 h-3" />
             </Link>
+          </div>
+        </div>
+        </div>
+
+        {/* Right: Jupiter Swap Widget */}
+        <div className="w-full lg:w-[420px] shrink-0">
+          <div className="text-center mb-4">
+            <p className="text-sm font-semibold text-foreground">Support the Bags.fm ecosystem</p>
+            <p className="text-xs text-muted-foreground mt-1">Swap here to pay with BAGS</p>
+          </div>
+          <div className="rounded-2xl border border-border bg-card shadow-xl overflow-hidden">
+            <div id="jupiter-terminal" className="min-h-[400px]" />
           </div>
         </div>
       </div>
