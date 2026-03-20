@@ -463,7 +463,17 @@ const Dashboard = () => {
       {/* Desktop sidebar */}
       <aside className="hidden md:flex w-60 border-r border-border flex-col justify-between py-6 px-4 bg-background fixed h-screen overflow-y-auto">
         <div>
-          <span className="font-display text-xl font-bold text-foreground px-3 cursor-pointer" onClick={() => navigate("/")}>STACKR</span>
+          <TooltipProvider delayDuration={300}>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <span className="font-display text-xl font-bold text-foreground px-3 cursor-pointer inline-flex items-center gap-2" onClick={() => navigate("/")}>
+                  <Home className="w-4 h-4 text-muted-foreground" />
+                  STACKR
+                </span>
+              </TooltipTrigger>
+              <TooltipContent side="right">Click to go home</TooltipContent>
+            </Tooltip>
+          </TooltipProvider>
           <nav className="mt-8 flex flex-col gap-1">
             {sidebarLinks.map((link) => (
               <button
