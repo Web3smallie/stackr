@@ -55,46 +55,6 @@ const PaymentPage = () => {
   const { setVisible } = useWalletModal();
   const { connection } = useConnection();
 
-  const [jupiterReady, setJupiterReady] = useState(false);
-  const [jupiterFailed, setJupiterFailed] = useState(false);
-
-  // Initialize Jupiter Terminal v4
-  useEffect(() => {
-    let cancelled = false;
-    let attempts = 0;
-    const maxAttempts = 30; // 15 seconds total
-
-    const tryInit = () => {
-      if (cancelled) return;
-      const win = window as any;
-
-      if (win.Jupiter && typeof win.Jupiter.init === "function") {
-        try {
-          win.Jupiter.init({
-            displayMode: "integrated",
-            integratedTargetId: "jupiter-terminal",
-            endpoint: "https://mainnet.helius-rpc.com/?api-key=0a08a6e6-5057-47e3-9944-d70a1a26ae41",
-            defaultExplorer: "Solscan",
-          });
-          if (!cancelled) setJupiterReady(true);
-        } catch {
-          if (!cancelled) setJupiterFailed(true);
-        }
-      } else {
-        attempts++;
-        if (attempts >= maxAttempts) {
-          if (!cancelled) setJupiterFailed(true);
-        } else {
-          setTimeout(tryInit, 500);
-        }
-      }
-    };
-
-    // Start polling after a brief delay for script to load
-    setTimeout(tryInit, 800);
-
-    return () => { cancelled = true; };
-  }, []);
 
   useEffect(() => {
     const fetchPage = async () => {
@@ -286,9 +246,8 @@ const PaymentPage = () => {
 
   return (
     <div className="min-h-screen bg-background flex items-center justify-center p-4">
-      <div className="w-full max-w-6xl flex flex-col lg:flex-row gap-6 items-start justify-center">
-        {/* Left: Payment Form */}
-        <div className="w-full lg:w-[420px] shrink-0">
+      <div className="w-full max-w-md flex flex-col items-center justify-center">
+        <div className="w-full max-w-md shrink-0">
         <div className="rounded-2xl border border-border bg-card p-6 shadow-xl">
           {/* Creator info */}
           <div className="text-center mb-6">
@@ -419,40 +378,6 @@ const PaymentPage = () => {
             </Link>
           </div>
         </div>
-        </div>
-
-        {/* Right: Jupiter Swap Widget */}
-        <div className="w-full lg:w-[380px] shrink-0">
-          <div className="text-center mb-3">
-            <p className="text-2xl font-extrabold tracking-tight" style={{ color: "#9333EA" }}>
-              Support the Bags.fm ecosystem
-            </p>
-            <p className="text-lg font-semibold mt-1" style={{ color: "#C084FC" }}>
-              Swap here to pay with BAGS
-            </p>
-          </div>
-          <div
-            className="rounded-2xl border-2 bg-card overflow-hidden"
-            style={{
-              borderColor: "hsl(270 91% 55% / 0.5)",
-              boxShadow: "0 0 24px hsl(270 91% 55% / 0.3), 0 0 48px hsl(270 91% 55% / 0.12), 0 4px 16px rgba(0,0,0,0.4)",
-            }}
-          >
-            {!jupiterFailed ? (
-              <div id="jupiter-terminal" style={{ maxHeight: "300px", overflow: "auto" }} />
-            ) : (
-              <div className="flex flex-col items-center justify-center p-6" style={{ height: "300px" }}>
-                <p className="text-sm text-muted-foreground mb-3 text-center">
-                  Swap widget unavailable — open Jupiter directly
-                </p>
-                <a href="https://jup.ag/swap/SOL-BAGS" target="_blank" rel="noopener noreferrer">
-                  <Button className="font-semibold" style={{ backgroundColor: "#9333EA" }}>
-                    Swap to BAGS on Jupiter ↗
-                  </Button>
-                </a>
-              </div>
-            )}
-          </div>
         </div>
       </div>
     </div>

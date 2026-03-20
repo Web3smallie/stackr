@@ -17,8 +17,9 @@ import {
   Eye,
   Plus,
   Sparkles,
-  Menu,
+  Home,
 } from "lucide-react";
+import { Tooltip, TooltipTrigger, TooltipContent, TooltipProvider } from "@/components/ui/tooltip";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useWallet } from "@solana/wallet-adapter-react";
@@ -107,6 +108,7 @@ const Dashboard = () => {
   const navigate = useNavigate();
   const { user, refreshUser, loading, isNewUser } = useAuth();
   const { connected, publicKey, signMessage } = useWallet();
+  const walletAddress = publicKey?.toBase58() || null;
   const { setVisible } = useWalletModal();
 
   const [activeSection, setActiveSection] = useState("dashboard");
@@ -160,9 +162,22 @@ const Dashboard = () => {
     return subscribeToStackrDataChanged(() => { void fetchVaults(); });
   }, [fetchVaults]);
 
+  // On mount, check localStorage for persisted signature verification
   useEffect(() => {
-    setSignatureVerified(false);
-  }, [publicKey?.toBase58()]);
+    if (walletAddress) {
+      const stored = localStorage.getItem(`stackr_sig_${walletAddress}`);
+      if (stored === "verified") {
+        setSignatureVerified(true);
+      }
+    }
+  }, [walletAddress]);
+
+  // Clear verification when wallet changes (different key)
+  useEffect(() => {
+    if (!connected) {
+      setSignatureVerified(false);
+    }
+  }, [connected]);
 
   useEffect(() => {
     if (!user) return;
@@ -192,6 +207,10 @@ const Dashboard = () => {
       const message = "Sign this message to verify you own this wallet and log into Stackr — this does not cost any gas fees.";
       await signMessage(new TextEncoder().encode(message));
       setSignatureVerified(true);
+      // Persist verification in localStorage
+      if (publicKey) {
+        localStorage.setItem(`stackr_sig_${publicKey.toBase58()}`, "verified");
+      }
       await refreshUser();
       toast({ title: "Wallet verified", description: "You're now signed into Stackr." });
     } catch (error) {
@@ -445,7 +464,17 @@ const Dashboard = () => {
       {/* Desktop sidebar */}
       <aside className="hidden md:flex w-60 border-r border-border flex-col justify-between py-6 px-4 bg-background fixed h-screen overflow-y-auto">
         <div>
-          <span className="font-display text-xl font-bold text-foreground px-3 cursor-pointer" onClick={() => navigate("/")}>STACKR</span>
+          <TooltipProvider delayDuration={300}>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <span className="font-display text-xl font-bold text-foreground px-3 cursor-pointer inline-flex items-center gap-2" onClick={() => navigate("/")}>
+                  <Home className="w-4 h-4 text-muted-foreground" />
+                  STACKR
+                </span>
+              </TooltipTrigger>
+              <TooltipContent side="right">Click to go home</TooltipContent>
+            </Tooltip>
+          </TooltipProvider>
           <nav className="mt-8 flex flex-col gap-1">
             {sidebarLinks.map((link) => (
               <button
@@ -475,7 +504,10 @@ const Dashboard = () => {
       <main className="flex-1 md:ml-60">
         <header className="border-b border-border px-4 sm:px-6 md:px-8 h-16 flex items-center justify-between sticky top-0 bg-background/80 backdrop-blur-sm z-10">
           <div className="flex items-center gap-3">
-            <span className="md:hidden font-display text-lg font-bold text-foreground cursor-pointer" onClick={() => navigate("/")}>STACKR</span>
+            <span className="md:hidden font-display text-lg font-bold text-foreground cursor-pointer inline-flex items-center gap-1.5" onClick={() => navigate("/")}>
+              <Home className="w-3.5 h-3.5 text-muted-foreground" />
+              STACKR
+            </span>
           </div>
           <div className="hidden md:block" />
           <div className="flex items-center gap-3">
