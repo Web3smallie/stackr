@@ -10,9 +10,9 @@ serve(async (req) => {
   if (req.method === "OPTIONS") return new Response(null, { headers: corsHeaders });
 
   try {
-    const TREASURY_WALLET = Deno.env.get("TREASURY_WALLET");
-    const BAGS_API_KEY = Deno.env.get("BAGS_API_KEY");
-    const SOLANA_RPC_URL = Deno.env.get("SOLANA_RPC_URL");
+    const TREASURY_WALLET = Deno.env.get("VITE_TREASURY_WALLET");
+    const BAGS_API_KEY = Deno.env.get("VITE_BAGS_API_KEY");
+    const SOLANA_RPC_URL = Deno.env.get("VITE_SOLANA_RPC_URL") || Deno.env.get("VITE_SOLANA_FALLBACK_RPC");
 
     if (!TREASURY_WALLET) {
       return new Response(JSON.stringify({ error: "TREASURY_WALLET not configured" }), {
