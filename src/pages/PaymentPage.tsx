@@ -246,7 +246,7 @@ const PaymentPage = () => {
 
   return (
     <div className="min-h-screen bg-background flex items-center justify-center p-4">
-      <div className="w-full max-w-6xl flex flex-col lg:flex-row gap-6 items-start justify-center">
+      <div className="w-full max-w-md flex flex-col items-center justify-center">
         {/* Left: Payment Form */}
         <div className="w-full lg:w-[420px] shrink-0">
         <div className="rounded-2xl border border-border bg-card p-6 shadow-xl">
