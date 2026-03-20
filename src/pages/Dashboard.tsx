@@ -20,7 +20,7 @@ import {
   Menu,
   X,
 } from "lucide-react";
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useWallet } from "@solana/wallet-adapter-react";
 import { useWalletModal } from "@solana/wallet-adapter-react-ui";
@@ -38,10 +38,12 @@ import TokenGatesSection from "@/components/TokenGatesSection";
 import ReferralsSection from "@/components/ReferralsSection";
 import AnalyticsSection from "@/components/AnalyticsSection";
 import VaultCard from "@/components/VaultCard";
+import DemoBadge from "@/components/DemoBadge";
 import { useAuth, truncateWallet } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
 import { Input } from "@/components/ui/input";
 import { toast } from "@/hooks/use-toast";
+import { emitStackrDataChanged, subscribeToStackrDataChanged } from "@/lib/dataSync";
 
 const sidebarLinks = [
   { icon: LayoutDashboard, label: "Dashboard", section: "dashboard" },
@@ -72,6 +74,23 @@ const demoVault = {
   isDemo: true,
 };
 
+interface VaultData {
+  id?: string;
+  user_id?: string;
+  vault_name: string;
+  vault_purpose: string | null;
+  vault_target: number;
+  vault_target_token: "SOL" | "USDC" | "USDT" | "BAGS";
+  current_amount: number;
+  vault_progress_percentage: number | null;
+  vault_notes: string | null;
+  unlock_date: string | null;
+  is_locked: boolean;
+  is_completed: boolean;
+  allow_contributions: boolean;
+  isDemo?: boolean;
+}
+
 const container = {
   hidden: { opacity: 0 },
   show: { opacity: 1, transition: { staggerChildren: 0.05 } },
@@ -95,6 +114,9 @@ const Dashboard = () => {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [vaultForm, setVaultForm] = useState({ name: "", purpose: "", target: "", token: "SOL", unlockDate: "", allowContributions: false });
   const [privacySaving, setPrivacySaving] = useState(false);
+  const [creatingVault, setCreatingVault] = useState(false);
+  const [vaults, setVaults] = useState<VaultData[]>([]);
+  const [vaultsLoading, setVaultsLoading] = useState(true);
   const [privacyState, setPrivacyState] = useState({
     anonymous: false,
     showEarnings: false,
@@ -102,6 +124,39 @@ const Dashboard = () => {
     showPayments: false,
     showPhoto: true,
   });
+
+  const fetchVaults = useCallback(async () => {
+    if (!user) { setVaultsLoading(false); return; }
+    const { data } = await supabase
+      .from("vaults")
+      .select("*")
+      .eq("user_id", user.id)
+      .order("created_at", { ascending: false });
+    setVaults(
+      (data ?? []).map((v) => ({
+        id: v.id,
+        user_id: v.user_id,
+        vault_name: v.vault_name,
+        vault_purpose: v.vault_purpose,
+        vault_target: Number(v.vault_target),
+        vault_target_token: v.vault_target_token,
+        current_amount: Number(v.current_amount),
+        vault_progress_percentage: v.vault_progress_percentage ? Number(v.vault_progress_percentage) : 0,
+        vault_notes: v.vault_notes,
+        unlock_date: v.unlock_date,
+        is_locked: v.is_locked,
+        is_completed: v.is_completed,
+        allow_contributions: v.allow_contributions,
+      })),
+    );
+    setVaultsLoading(false);
+  }, [user]);
+
+  useEffect(() => { void fetchVaults(); }, [fetchVaults]);
+
+  useEffect(() => {
+    return subscribeToStackrDataChanged(() => { void fetchVaults(); });
+  }, [fetchVaults]);
 
   useEffect(() => {
     setSignatureVerified(false);
@@ -181,16 +236,57 @@ const Dashboard = () => {
     setPrivacySaving(false);
   };
 
-  const createVault = () => {
-    toast({ title: "Vault created!", description: `${vaultForm.name || "New vault"} is ready.` });
-    setShowCreateVault(false);
-    setVaultForm({ name: "", purpose: "", target: "", token: "SOL", unlockDate: "", allowContributions: false });
+  const createVault = async () => {
+    if (!user || !vaultForm.name || !vaultForm.target) return;
+    setCreatingVault(true);
+
+    const { data, error } = await supabase.from("vaults").insert({
+      user_id: user.id,
+      vault_name: vaultForm.name,
+      vault_purpose: vaultForm.purpose || null,
+      vault_target: Number(vaultForm.target),
+      vault_target_token: vaultForm.token as any,
+      unlock_date: vaultForm.unlockDate || null,
+      allow_contributions: vaultForm.allowContributions,
+    }).select().single();
+
+    setCreatingVault(false);
+
+    if (error) {
+      toast({ title: "Could not create vault", description: error.message, variant: "destructive" });
+      return;
+    }
+
+    if (data) {
+      setVaults((prev) => [{
+        id: data.id,
+        user_id: data.user_id,
+        vault_name: data.vault_name,
+        vault_purpose: data.vault_purpose,
+        vault_target: Number(data.vault_target),
+        vault_target_token: data.vault_target_token,
+        current_amount: Number(data.current_amount),
+        vault_progress_percentage: data.vault_progress_percentage ? Number(data.vault_progress_percentage) : 0,
+        vault_notes: data.vault_notes,
+        unlock_date: data.unlock_date,
+        is_locked: data.is_locked,
+        is_completed: data.is_completed,
+        allow_contributions: data.allow_contributions,
+      }, ...prev]);
+      emitStackrDataChanged();
+      toast({ title: "Vault created!", description: `${vaultForm.name} is ready.` });
+      setShowCreateVault(false);
+      setVaultForm({ name: "", purpose: "", target: "", token: "SOL", unlockDate: "", allowContributions: false });
+    }
   };
 
   const handleSectionChange = (section: string) => {
     setActiveSection(section);
     setMobileMenuOpen(false);
   };
+
+  const hasRealVaults = vaults.length > 0;
+  const displayVaults: VaultData[] = hasRealVaults ? vaults : [demoVault];
 
   // Connect wallet page with signature verification modal overlay
   if (!connected) {
@@ -271,7 +367,6 @@ const Dashboard = () => {
   if (!signatureVerified) {
     return (
       <div className="min-h-screen gradient-bg flex items-center justify-center p-4">
-        {/* Background connect wallet page */}
         <div className="w-full max-w-xl rounded-[2rem] border border-primary/25 bg-card p-8 text-center shadow-[0_0_50px_hsl(var(--primary)/0.18)] opacity-30 pointer-events-none">
           <div className="w-20 h-20 rounded-3xl gradient-primary flex items-center justify-center mx-auto mb-8">
             <Wallet className="w-10 h-10 text-primary-foreground" />
@@ -346,7 +441,9 @@ const Dashboard = () => {
             </div>
             <div className="flex gap-3">
               <Button variant="ghost" className="flex-1" onClick={() => setShowCreateVault(false)}>Cancel</Button>
-              <Button className="flex-1" onClick={createVault} disabled={!vaultForm.name || !vaultForm.target}>Create Vault</Button>
+              <Button className="flex-1" onClick={() => void createVault()} disabled={!vaultForm.name || !vaultForm.target || creatingVault}>
+                {creatingVault ? "Creating..." : "Create Vault"}
+              </Button>
             </div>
           </div>
         </div>
@@ -416,12 +513,14 @@ const Dashboard = () => {
                   <Button onClick={() => setShowCreateVault(true)}><Plus className="w-4 h-4 mr-1.5" />New Vault</Button>
                 </div>
                 <div className="grid sm:grid-cols-2 gap-4">
-                  <div className="opacity-60 relative">
-                    <div className="absolute top-3 right-3 z-20">
-                      <span className="inline-flex items-center rounded-full bg-amber-500/20 text-amber-400 border border-amber-500/40 text-[10px] uppercase tracking-wider font-bold px-2 py-0.5">Demo</span>
+                  {displayVaults.map((vault, idx) => (
+                    <div key={vault.id || `vault-${idx}`} className="relative">
+                      <VaultCard
+                        vault={vault}
+                        onDepositSuccess={() => void fetchVaults()}
+                      />
                     </div>
-                    <VaultCard vault={demoVault} />
-                  </div>
+                  ))}
                 </div>
               </motion.div>
             )}
