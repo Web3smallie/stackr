@@ -251,8 +251,6 @@ const PoolsSection = () => {
         toast({ title: "💼 Bags Fee Sharing", description: bagsResult.message });
       }
       setView("active");
-      toast({ title: "Pool joined!", description: `${amount} ${pool.token} committed to ${pool.name}.` });
-      setView("active");
     } catch (err: any) {
       if (err?.message?.includes("rejected")) {
         toast({ title: "Transaction cancelled", variant: "destructive" });
