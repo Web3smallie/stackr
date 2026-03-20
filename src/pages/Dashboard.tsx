@@ -476,9 +476,6 @@ const Dashboard = () => {
       <main className="flex-1 md:ml-60">
         <header className="border-b border-border px-4 sm:px-6 md:px-8 h-16 flex items-center justify-between sticky top-0 bg-background/80 backdrop-blur-sm z-10">
           <div className="flex items-center gap-3">
-            <Button variant="ghost" size="icon" className="md:hidden" onClick={() => setMobileMenuOpen(true)}>
-              <Menu className="w-5 h-5" />
-            </Button>
             <span className="md:hidden font-display text-lg font-bold text-foreground cursor-pointer" onClick={() => navigate("/")}>STACKR</span>
           </div>
           <div className="hidden md:block" />
