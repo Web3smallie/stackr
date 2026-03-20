@@ -22,7 +22,7 @@ serve(async (req) => {
     }
 
     // Test RPC connection
-    const rpcResponse = await fetch(rpcUrl, {
+    const rpcResponse = await fetch(activeRpcUrl, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ jsonrpc: "2.0", id: 1, method: "getHealth" }),
@@ -32,7 +32,7 @@ serve(async (req) => {
     const isHealthy = rpcData.result === "ok";
 
     return new Response(JSON.stringify({
-      rpcUrl,
+      rpcUrl: activeRpcUrl,
       network,
       connected: isHealthy,
       status: isHealthy ? "healthy" : "degraded",
