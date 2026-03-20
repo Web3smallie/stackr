@@ -33,6 +33,8 @@ serve(async (req) => {
     const transactionPlan = {
       total: amount,
       platformFee,
+      treasuryFee,
+      bagsFee,
       platformFeePercentage: 1,
       creatorAmount,
       treasuryWallet: TREASURY_WALLET,
