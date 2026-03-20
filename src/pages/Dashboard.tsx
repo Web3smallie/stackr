@@ -92,6 +92,8 @@ interface VaultData {
   isDemo?: boolean;
 }
 
+// VaultData interface: vault_progress_percentage is computed dynamically, never sent in updates
+
 const container = {
   hidden: { opacity: 0 },
   show: { opacity: 1, transition: { staggerChildren: 0.05 } },
