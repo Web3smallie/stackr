@@ -45,12 +45,6 @@ const steps = [
   { step: "03", title: "Start Stacking", description: "Create your page, vaults and pools from one dashboard." },
 ];
 
-const livePayments = [
-  { amount: "2.5 SOL", time: "just now" },
-  { amount: "50 USDC", time: "2m ago" },
-  { amount: "1.2 SOL", time: "5m ago" },
-  { amount: "100 USDT", time: "8m ago" },
-];
 
 const container = {
   hidden: { opacity: 0 },
