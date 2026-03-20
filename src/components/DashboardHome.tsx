@@ -86,8 +86,7 @@ const DashboardHome = ({ onNavigate }: Props) => {
     fetchTx();
   }, [wallet]);
 
-  const showDemo = shouldShowDemo("transactions", realTx.length > 0);
-  const displayTx = realTx.length > 0 ? realTx : (showDemo ? demoTransactions : []);
+  const displayTx = realTx;
   const displayName = user?.is_anonymous
     ? truncateWallet(publicKey?.toBase58() || "")
     : user?.display_name || user?.username || truncateWallet(publicKey?.toBase58() || "");
