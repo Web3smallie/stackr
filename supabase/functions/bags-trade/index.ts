@@ -9,9 +9,9 @@ serve(async (req) => {
   if (req.method === "OPTIONS") return new Response(null, { headers: corsHeaders });
 
   try {
-    const BAGS_API_KEY = Deno.env.get("BAGS_API_KEY");
+    const BAGS_API_KEY = Deno.env.get("VITE_BAGS_API_KEY");
     if (!BAGS_API_KEY) {
-      return new Response(JSON.stringify({ error: "BAGS_API_KEY not configured" }), {
+      return new Response(JSON.stringify({ error: "VITE_BAGS_API_KEY not configured" }), {
         status: 500,
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });

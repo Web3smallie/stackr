@@ -9,11 +9,13 @@ serve(async (req) => {
   if (req.method === "OPTIONS") return new Response(null, { headers: corsHeaders });
 
   try {
-    const rpcUrl = Deno.env.get("SOLANA_RPC_URL");
-    const network = Deno.env.get("SOLANA_NETWORK") || "mainnet-beta";
+    const rpcUrl = Deno.env.get("VITE_SOLANA_RPC_URL");
+    const fallbackRpc = Deno.env.get("VITE_SOLANA_FALLBACK_RPC");
+    const network = Deno.env.get("VITE_SOLANA_NETWORK") || "mainnet-beta";
 
-    if (!rpcUrl) {
-      return new Response(JSON.stringify({ error: "SOLANA_RPC_URL not configured" }), {
+    const activeRpcUrl = rpcUrl || fallbackRpc;
+    if (!activeRpcUrl) {
+      return new Response(JSON.stringify({ error: "VITE_SOLANA_RPC_URL not configured" }), {
         status: 500,
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
