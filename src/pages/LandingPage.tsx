@@ -15,6 +15,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { useNavigate } from "react-router-dom";
 import Footer from "@/components/Footer";
+import LiveActivityFeed from "@/components/LiveActivityFeed";
 
 const stats = [
   { value: "1.4B", label: "Creators underserved" },
@@ -44,12 +45,6 @@ const steps = [
   { step: "03", title: "Start Stacking", description: "Create your page, vaults and pools from one dashboard." },
 ];
 
-const livePayments = [
-  { amount: "2.5 SOL", time: "just now" },
-  { amount: "50 USDC", time: "2m ago" },
-  { amount: "1.2 SOL", time: "5m ago" },
-  { amount: "100 USDT", time: "8m ago" },
-];
 
 const container = {
   hidden: { opacity: 0 },
@@ -150,20 +145,7 @@ const LandingPage = () => {
         </div>
       </section>
 
-      <section className="pb-16 px-6 overflow-hidden">
-        <div className="max-w-4xl mx-auto">
-          <motion.div className="flex gap-3 justify-center flex-wrap" variants={container} initial="hidden" whileInView="show" viewport={{ once: true }}>
-            {livePayments.map((payment, i) => (
-              <motion.div key={i} variants={item} className="flex items-center gap-2 px-4 py-2 rounded-xl border border-border/50 bg-card/50 glass text-sm">
-                <span className="w-6 h-6 rounded-full gradient-primary flex items-center justify-center text-xs font-bold text-primary-foreground">✦</span>
-                <span className="text-muted-foreground">A creator received</span>
-                <span className="font-semibold text-foreground">{payment.amount}</span>
-                <span className="text-xs text-muted-foreground/60">· {payment.time}</span>
-              </motion.div>
-            ))}
-          </motion.div>
-        </div>
-      </section>
+      <LiveActivityFeed />
 
       <section className="border-y border-border/50 bg-secondary/30">
         <div className="max-w-6xl mx-auto px-6">
