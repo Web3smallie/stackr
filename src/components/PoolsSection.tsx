@@ -247,9 +247,7 @@ const PoolsSection = () => {
       emitStackrDataChanged();
       await fetchPools();
       toast({ title: "Pool joined!", description: `${amount} ${pool.token} committed to ${pool.name}.` });
-      if (bagsResult.success) {
-        toast({ title: "💼 Bags Fee Sharing", description: bagsResult.message });
-      }
+      toast({ title: bagsResult.success ? "🎒 Bags Fee Sharing Active" : "⚠️ Bags Fee Sharing", description: bagsResult.message });
       setView("active");
     } catch (err: any) {
       if (err?.message?.includes("rejected")) {
