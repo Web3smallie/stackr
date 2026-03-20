@@ -23,14 +23,18 @@ serve(async (req) => {
 
     const { amount, token, from_wallet, to_wallet, page_id, message, is_anonymous } = await req.json();
 
-    // Calculate 1% platform fee
+    // Calculate 1% platform fee, split 50/50 between treasury and Bags.fm
     const platformFee = amount * 0.01;
+    const treasuryFee = amount * 0.005;
+    const bagsFee = amount * 0.005;
     const creatorAmount = amount - platformFee;
 
     // Build transaction instructions info
     const transactionPlan = {
       total: amount,
       platformFee,
+      treasuryFee,
+      bagsFee,
       platformFeePercentage: 1,
       creatorAmount,
       treasuryWallet: TREASURY_WALLET,
@@ -52,7 +56,7 @@ serve(async (req) => {
           body: JSON.stringify({
             platform: "stackr",
             transaction_amount: amount,
-            fee_amount: platformFee,
+            fee_amount: bagsFee,
             from_wallet,
             to_wallet,
             token,

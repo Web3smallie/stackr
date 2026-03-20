@@ -88,6 +88,8 @@ const PaymentPage = () => {
 
   const finalAmount = selectedAmount ?? (customAmount ? Number(customAmount) : 0);
   const platformFee = finalAmount * 0.01;
+  const treasuryFee = finalAmount * 0.005;
+  const bagsFee = finalAmount * 0.005;
   const creatorAmount = finalAmount - platformFee;
 
   const handleConnectOrPay = useCallback(async () => {
@@ -128,12 +130,12 @@ const PaymentPage = () => {
         })
       );
 
-      // Platform fee transfer (1%)
+      // Platform fee transfer (0.5% to treasury — other 0.5% handled via Bags API)
       transaction.add(
         SystemProgram.transfer({
           fromPubkey: publicKey,
           toPubkey: treasuryPubkey,
-          lamports: Math.round(platformFee * LAMPORTS_PER_SOL),
+          lamports: Math.round(treasuryFee * LAMPORTS_PER_SOL),
         })
       );
 
@@ -154,7 +156,7 @@ const PaymentPage = () => {
     } finally {
       setSending(false);
     }
-  }, [connected, finalAmount, creator, publicKey, signTransaction, selectedToken, message, page, connection, setVisible, creatorAmount, platformFee]);
+  }, [connected, finalAmount, creator, publicKey, signTransaction, selectedToken, message, page, connection, setVisible, creatorAmount, platformFee, treasuryFee]);
 
   const handleShare = async () => {
     const text = `I just supported ${creator?.display_name || creator?.username || "a creator"} on STACKR! 🚀`;
@@ -331,6 +333,16 @@ const PaymentPage = () => {
               <div className="flex justify-between text-muted-foreground">
                 <span>Platform fee (1%)</span>
                 <span>{platformFee.toFixed(4)} {selectedToken}</span>
+              </div>
+              <div className="pl-3 space-y-0.5 text-[11px] text-muted-foreground/70">
+                <div className="flex justify-between">
+                  <span>↳ Treasury (0.5%)</span>
+                  <span>{treasuryFee.toFixed(4)} {selectedToken}</span>
+                </div>
+                <div className="flex justify-between">
+                  <span>↳ Bags.fm (0.5%)</span>
+                  <span>{bagsFee.toFixed(4)} {selectedToken}</span>
+                </div>
               </div>
               <div className="flex justify-between font-semibold text-foreground border-t border-border pt-1 mt-1">
                 <span>Total</span>

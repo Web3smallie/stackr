@@ -18,10 +18,10 @@ import Footer from "@/components/Footer";
 import LiveActivityFeed from "@/components/LiveActivityFeed";
 
 const stats = [
-  { value: "1.4B", label: "Creators underserved" },
-  { value: "<1s", label: "Transaction speed" },
-  { value: "1%", label: "Platform fee" },
-  { value: "190+", label: "Countries supported" },
+  { value: "1.4B", label: "Creators underserved", subtitle: null },
+  { value: "<1s", label: "Transaction speed", subtitle: null },
+  { value: "1%", label: "Platform fee", subtitle: "0.5% goes to Bags.fm" },
+  { value: "190+", label: "Countries supported", subtitle: null },
 ];
 
 const features = [
@@ -157,6 +157,7 @@ const LandingPage = () => {
               <motion.div key={stat.label} variants={item} className={`py-10 px-4 text-center ${i < stats.length - 1 ? "md:border-r border-border/40" : ""}`}>
                 <div className="font-display text-3xl sm:text-4xl font-bold text-foreground tabular-nums">{stat.value}</div>
                 <div className="text-sm text-muted-foreground mt-1">{stat.label}</div>
+                {stat.subtitle && <div className="text-[11px] text-muted-foreground/60 mt-0.5">{stat.subtitle}</div>}
               </motion.div>
             ))}
           </motion.div>
