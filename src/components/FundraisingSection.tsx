@@ -13,6 +13,9 @@ import { emitStackrDataChanged } from "@/lib/dataSync";
 import { toast } from "@/hooks/use-toast";
 import DemoBadge from "@/components/DemoBadge";
 import { shouldShowDemo, markSectionUsed } from "@/lib/demoTracker";
+import { getTreasuryWallet, registerBagsFeeSharing } from "@/lib/transactionUtils";
+import { sendSolTransaction } from "@/lib/solanaTransaction";
+import { PublicKey } from "@solana/web3.js";
 
 const tokenColors: Record<string, string> = {
   SOL: "bg-orange-500/20 text-orange-400 border-orange-500/30",
