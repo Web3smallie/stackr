@@ -18,10 +18,10 @@ import Footer from "@/components/Footer";
 import LiveActivityFeed from "@/components/LiveActivityFeed";
 
 const stats = [
-  { value: "1.4B", label: "Creators underserved" },
-  { value: "<1s", label: "Transaction speed" },
-  { value: "1%", label: "Platform fee" },
-  { value: "190+", label: "Countries supported" },
+  { value: "1.4B", label: "Creators underserved", subtitle: null },
+  { value: "<1s", label: "Transaction speed", subtitle: null },
+  { value: "1%", label: "Platform fee", subtitle: "0.5% goes to Bags.fm" },
+  { value: "190+", label: "Countries supported", subtitle: null },
 ];
 
 const features = [
