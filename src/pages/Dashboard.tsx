@@ -161,9 +161,22 @@ const Dashboard = () => {
     return subscribeToStackrDataChanged(() => { void fetchVaults(); });
   }, [fetchVaults]);
 
+  // On mount, check localStorage for persisted signature verification
   useEffect(() => {
-    setSignatureVerified(false);
-  }, [publicKey?.toBase58()]);
+    if (walletAddress) {
+      const stored = localStorage.getItem(`stackr_sig_${walletAddress}`);
+      if (stored === "verified") {
+        setSignatureVerified(true);
+      }
+    }
+  }, [walletAddress]);
+
+  // Clear verification when wallet changes (different key)
+  useEffect(() => {
+    if (!connected) {
+      setSignatureVerified(false);
+    }
+  }, [connected]);
 
   useEffect(() => {
     if (!user) return;
