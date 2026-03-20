@@ -82,7 +82,7 @@ const LiveActivityFeed = () => {
     const results: ActivityItem[] = [];
 
     const [payments, deposits, poolMembers, goals, vaults] = await Promise.all([
-      supabase.from("payments").select("id, amount, token, created_at, status").eq("status", "confirmed").order("created_at", { ascending: false }).limit(10),
+      supabase.from("payments").select("id, amount, token, created_at, status").in("status", ["confirmed", "pending"]).order("created_at", { ascending: false }).limit(10),
       supabase.from("vault_deposits").select("id, amount, token, created_at").order("created_at", { ascending: false }).limit(10),
       supabase.from("pool_members").select("id, contribution, created_at").order("created_at", { ascending: false }).limit(10),
       supabase.from("fundraising_goals").select("id, current_amount, token, updated_at").gt("current_amount", 0).order("updated_at", { ascending: false }).limit(5),
