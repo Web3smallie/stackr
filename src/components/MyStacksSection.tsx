@@ -106,7 +106,7 @@ const MyStacksSection = () => {
     }
     if (data) {
       setStacks((prev) => [...prev, { ...data, accepted_tokens: data.accepted_tokens || [], isDemo: false }]);
-      toast({ title: "Payment page created!", description: `getstackr.app/${data.slug}` });
+      toast({ title: "Payment page created!", description: `${APP_DOMAIN}/${data.slug}` });
       setShowCreate(false);
       setForm({ title: "", slug: "", description: "", accepted_tokens: ["SOL", "USDC", "USDT", "BAGS"], suggested_amounts: "1, 5, 10, 25", is_private: false });
     }
