@@ -388,37 +388,26 @@ const Dashboard = () => {
     <div className="min-h-screen bg-background flex">
       <OnboardingModal canShow={signatureVerified} />
 
-      {/* Mobile menu overlay */}
-      {mobileMenuOpen && (
-        <div className="fixed inset-0 z-40 bg-background/95 backdrop-blur-sm md:hidden">
-          <div className="flex items-center justify-between px-4 h-16 border-b border-border">
-            <span className="font-display text-xl font-bold text-foreground cursor-pointer" onClick={() => { setMobileMenuOpen(false); navigate("/"); }}>STACKR</span>
-            <Button variant="ghost" size="icon" onClick={() => setMobileMenuOpen(false)}>
-              <X className="w-5 h-5" />
-            </Button>
-          </div>
-          <nav className="flex flex-col gap-1 p-4">
-            {sidebarLinks.map((link) => (
-              <button
-                key={link.label}
-                type="button"
-                onClick={() => handleSectionChange(link.section)}
-                className={`flex items-center gap-3 px-3 py-3 rounded-xl text-sm font-medium transition-colors duration-200 ${
-                  activeSection === link.section
-                    ? "bg-primary text-primary-foreground shadow-[0_0_24px_hsl(var(--primary)/0.18)]"
-                    : "text-muted-foreground hover:text-foreground hover:bg-secondary"
-                }`}
-              >
-                <link.icon className="w-4 h-4" />
-                {link.label}
-              </button>
-            ))}
-          </nav>
-          <div className="px-4 mt-4">
-            <WalletButton />
-          </div>
+      {/* Mobile bottom navigation bar */}
+      <nav className="fixed bottom-0 left-0 right-0 z-40 md:hidden bg-background/95 backdrop-blur-sm border-t border-border">
+        <div className="flex overflow-x-auto scrollbar-hide gap-0.5 px-1 py-1.5">
+          {sidebarLinks.map((link) => (
+            <button
+              key={link.label}
+              type="button"
+              onClick={() => setActiveSection(link.section)}
+              className={`flex flex-col items-center justify-center min-w-[4rem] px-1.5 py-1.5 rounded-xl text-[10px] font-medium transition-colors duration-200 shrink-0 ${
+                activeSection === link.section
+                  ? "bg-primary text-primary-foreground"
+                  : "text-muted-foreground"
+              }`}
+            >
+              <link.icon className="w-4 h-4 mb-0.5" />
+              <span className="truncate max-w-[3.5rem]">{link.label.replace("My ", "")}</span>
+            </button>
+          ))}
         </div>
-      )}
+      </nav>
 
       {showCreateVault && (
         <div className="fixed inset-0 z-40 flex items-center justify-center bg-background/80 backdrop-blur-sm p-4">
