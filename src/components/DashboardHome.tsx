@@ -9,7 +9,6 @@ import { Badge } from "@/components/ui/badge";
 import DemoBadge from "@/components/DemoBadge";
 import { supabase } from "@/integrations/supabase/client";
 import { useEffect, useState } from "react";
-import { shouldShowDemo } from "@/lib/demoTracker";
 import { formatDistanceToNow } from "date-fns";
 const item = {
   hidden: { opacity: 0, y: 10 },
@@ -86,8 +85,7 @@ const DashboardHome = ({ onNavigate }: Props) => {
     fetchTx();
   }, [wallet]);
 
-  const showDemo = shouldShowDemo("transactions", realTx.length > 0);
-  const displayTx = realTx.length > 0 ? realTx : (showDemo ? demoTransactions : []);
+  const displayTx = realTx;
   const displayName = user?.is_anonymous
     ? truncateWallet(publicKey?.toBase58() || "")
     : user?.display_name || user?.username || truncateWallet(publicKey?.toBase58() || "");
@@ -154,14 +152,13 @@ const DashboardHome = ({ onNavigate }: Props) => {
               <div className="p-6 text-center text-sm text-muted-foreground">No transactions yet</div>
             )}
             {displayTx.map((tx, i) => (
-              <div key={i} className={`flex items-center justify-between p-4 hover:bg-secondary/40 transition-colors ${realTx.length === 0 ? "opacity-60" : ""}`}>
+              <div key={i} className="flex items-center justify-between p-4 hover:bg-secondary/40 transition-colors">
                 <div className="flex items-center gap-3">
                   <div className="w-9 h-9 rounded-2xl bg-primary/15 flex items-center justify-center"><ArrowDownUp className="w-4 h-4 text-primary" /></div>
                   <div>
-                    <div className="flex items-center gap-2">
-                      <p className="text-sm font-medium text-foreground">{tx.type}</p>
-                      {realTx.length === 0 && <DemoBadge />}
-                    </div>
+                     <div className="flex items-center gap-2">
+                       <p className="text-sm font-medium text-foreground">{tx.type}</p>
+                     </div>
                     <p className="text-xs text-muted-foreground">From {tx.from}</p>
                   </div>
                 </div>
