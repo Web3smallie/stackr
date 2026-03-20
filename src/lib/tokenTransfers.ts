@@ -57,6 +57,28 @@ async function ensureAssociatedTokenAccount({
   return ata;
 }
 
+async function getTokenDecimals(connection: Connection, mint: PublicKey) {
+  const mintInfo = await connection.getParsedAccountInfo(mint, "confirmed");
+  const parsed = mintInfo.value?.data;
+
+  if (
+    !parsed ||
+    typeof parsed !== "object" ||
+    !("parsed" in parsed) ||
+    typeof parsed.parsed !== "object" ||
+    parsed.parsed === null ||
+    !("info" in parsed.parsed) ||
+    typeof parsed.parsed.info !== "object" ||
+    parsed.parsed.info === null ||
+    !("decimals" in parsed.parsed.info) ||
+    typeof parsed.parsed.info.decimals !== "number"
+  ) {
+    throw new Error("Could not read token mint decimals");
+  }
+
+  return parsed.parsed.info.decimals;
+}
+
 export async function buildDirectPaymentTransaction({
   connection,
   fromPubkey,
@@ -95,8 +117,14 @@ export async function buildDirectPaymentTransaction({
     );
   } else {
     const mint = new PublicKey(TOKEN_MINTS[token]);
-    const decimals = token === "USDT" ? 6 : 6;
+    const decimals = await getTokenDecimals(connection, mint);
     const senderAta = await getAssociatedTokenAddress(mint, fromPubkey);
+    const senderAtaInfo = await connection.getAccountInfo(senderAta, "confirmed");
+
+    if (!senderAtaInfo) {
+      throw new Error(`Connected wallet does not hold ${token}`);
+    }
+
     const creatorAta = await ensureAssociatedTokenAccount({
       transaction,
       connection,

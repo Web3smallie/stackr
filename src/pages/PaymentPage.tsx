@@ -8,7 +8,6 @@ import { ArrowLeft, Wallet, ExternalLink, Check, PartyPopper, Share2, Loader2 } 
 import { useWallet } from "@solana/wallet-adapter-react";
 import { useWalletModal } from "@solana/wallet-adapter-react-ui";
 import { useConnection } from "@solana/wallet-adapter-react";
-import { PublicKey } from "@solana/web3.js";
 import { processPayment } from "@/lib/payments";
 import { APP_URL } from "@/lib/appUrl";
 import { buildDirectPaymentTransaction } from "@/lib/tokenTransfers";
@@ -117,7 +116,6 @@ const PaymentPage = () => {
 
       if (!result.success) throw new Error("Payment registration failed");
 
-      new PublicKey(creator.wallet_address);
       const { transaction, blockhash, lastValidBlockHeight } = await buildDirectPaymentTransaction({
         connection,
         fromPubkey: publicKey,
