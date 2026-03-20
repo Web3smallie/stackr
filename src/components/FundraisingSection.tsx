@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { APP_DOMAIN, APP_URL } from "@/lib/appUrl";
 import { motion } from "framer-motion";
 import { Target, Plus, Users, Clock, TrendingUp, Share2, ExternalLink, Wallet } from "lucide-react";
 import { Button } from "@/components/ui/button";
