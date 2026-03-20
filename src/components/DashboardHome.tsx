@@ -157,10 +157,9 @@ const DashboardHome = ({ onNavigate }: Props) => {
                 <div className="flex items-center gap-3">
                   <div className="w-9 h-9 rounded-2xl bg-primary/15 flex items-center justify-center"><ArrowDownUp className="w-4 h-4 text-primary" /></div>
                   <div>
-                    <div className="flex items-center gap-2">
-                      <p className="text-sm font-medium text-foreground">{tx.type}</p>
-                      {realTx.length === 0 && <DemoBadge />}
-                    </div>
+                     <div className="flex items-center gap-2">
+                       <p className="text-sm font-medium text-foreground">{tx.type}</p>
+                     </div>
                     <p className="text-xs text-muted-foreground">From {tx.from}</p>
                   </div>
                 </div>
