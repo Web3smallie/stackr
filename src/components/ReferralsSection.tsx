@@ -3,7 +3,7 @@ import { Gift, Copy, Trophy, Users, Check } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/contexts/AuthContext";
 import { useState } from "react";
-import { APP_DOMAIN } from "@/lib/appUrl";
+import { APP_URL } from "@/lib/appUrl";
 import { toast } from "@/hooks/use-toast";
 import DemoBadge from "@/components/DemoBadge";
 
@@ -12,7 +12,7 @@ const leaderboard = [{ rank: 1, wallet: "7xKX...3sU", referrals: 42, earnings: 4
 const ReferralsSection = () => {
   const { user } = useAuth();
   const [copied, setCopied] = useState(false);
-  const refLink = `${APP_DOMAIN}?ref=${user?.username || "user"}`;
+  const refLink = `${APP_URL}?ref=${user?.username || "user"}`;
 
   const copyLink = async () => {
     await navigator.clipboard.writeText(refLink);
