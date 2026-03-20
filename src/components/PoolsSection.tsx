@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Plus, UserPlus, Users, Vote, TrendingUp, X, BarChart3, Zap, Search, LogOut, Loader2 } from "lucide-react";
 import DemoBadge from "@/components/DemoBadge";
@@ -7,6 +7,9 @@ import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
 import PoolDetailsModal from "@/components/PoolDetailsModal";
+import { useAuth } from "@/contexts/AuthContext";
+import { supabase } from "@/integrations/supabase/client";
+import { emitStackrDataChanged, subscribeToStackrDataChanged } from "@/lib/dataSync";
 import { toast } from "@/hooks/use-toast";
 
 const tokenColors: Record<string, string> = {
@@ -31,7 +34,7 @@ interface VoteItem {
   user_voted?: VoteDirection | null;
 }
 
-interface DemoPool {
+interface PoolData {
   id: string;
   name: string;
   description: string;
@@ -46,7 +49,7 @@ interface DemoPool {
   isDemo?: boolean;
 }
 
-const demoPool: DemoPool = {
+const demoPool: PoolData = {
   id: "demo-1", name: "Solana Alpha Fund", description: "Community-driven pool targeting high-potential Solana tokens",
   total_value: 245.5, member_count: 12, token: "SOL", target_tokens: ["BAGS", "SOL"],
   my_contribution: 15.2, my_share: 6.2, is_active: true, isDemo: true,
@@ -55,7 +58,7 @@ const demoPool: DemoPool = {
   ],
 };
 
-const browsePools: DemoPool[] = [
+const browsePools: PoolData[] = [
   { id: "4", name: "DeFi Explorers", description: "Exploring new DeFi protocols on Solana", total_value: 89.3, member_count: 7, token: "SOL", target_tokens: ["SOL", "BAGS"], is_active: true },
   { id: "5", name: "Micro Cap Gems", description: "Small cap token research and investment pool", total_value: 3200, member_count: 15, token: "USDC", target_tokens: ["BAGS", "SOL"], is_active: true },
 ];
@@ -63,22 +66,52 @@ const browsePools: DemoPool[] = [
 type ViewMode = "active" | "create" | "join" | "voting";
 
 const PoolsSection = () => {
+  const { user } = useAuth();
   const [view, setView] = useState<ViewMode>("active");
-  const [pools, setPools] = useState<DemoPool[]>([]);
+  const [pools, setPools] = useState<PoolData[]>([]);
   const [selectedPoolId, setSelectedPoolId] = useState<string | null>(null);
-  const [detailsPool, setDetailsPool] = useState<DemoPool | null>(null);
+  const [detailsPool, setDetailsPool] = useState<PoolData | null>(null);
   const [joinAmounts, setJoinAmounts] = useState<Record<string, string>>({});
   const [searchQuery, setSearchQuery] = useState("");
   const [confirmLeaveId, setConfirmLeaveId] = useState<string | null>(null);
   const [creating, setCreating] = useState(false);
   const [createForm, setCreateForm] = useState({ name: "", description: "", token: "SOL" as PoolToken, target_tokens: [] as string[], min_contribution: "", pool_size_limit: "" });
 
+  const fetchPools = useCallback(async () => {
+    if (!user) return;
+    const { data } = await supabase
+      .from("pools")
+      .select("*")
+      .eq("creator_id", user.id)
+      .order("created_at", { ascending: false });
+    setPools(
+      (data ?? []).map((p) => ({
+        id: p.id,
+        name: p.name,
+        description: p.description ?? "",
+        total_value: Number(p.total_value),
+        member_count: p.member_count,
+        token: p.token as PoolToken,
+        target_tokens: p.target_tokens ?? [],
+        is_active: p.is_active,
+        my_contribution: 0,
+        my_share: 0,
+      })),
+    );
+  }, [user]);
+
+  useEffect(() => { void fetchPools(); }, [fetchPools]);
+  useEffect(() => subscribeToStackrDataChanged(() => { void fetchPools(); }), [fetchPools]);
+
   const selectedPool = useMemo(() => pools.find((pool) => pool.id === selectedPoolId) ?? null, [pools, selectedPoolId]);
 
+  const hasReal = pools.length > 0;
+
   const filteredPools = useMemo(() => {
-    if (!searchQuery.trim()) return pools;
-    return pools.filter((p) => p.name.toLowerCase().includes(searchQuery.toLowerCase()));
-  }, [pools, searchQuery]);
+    const source = hasReal ? pools : [demoPool];
+    if (!searchQuery.trim()) return source;
+    return source.filter((p) => p.name.toLowerCase().includes(searchQuery.toLowerCase()));
+  }, [pools, hasReal, searchQuery]);
 
   const toggleTargetToken = (token: string) => {
     setCreateForm((prev) => ({
@@ -87,21 +120,53 @@ const PoolsSection = () => {
     }));
   };
 
-  const createPool = () => {
+  const createPool = async () => {
     if (!createForm.name) {
       toast({ title: "Add a pool name", variant: "destructive" });
       return;
     }
+    if (!user) {
+      toast({ title: "Wallet required", variant: "destructive" });
+      return;
+    }
     setCreating(true);
-    setTimeout(() => {
+
+    const { data, error } = await supabase.from("pools").insert({
+      creator_id: user.id,
+      name: createForm.name,
+      description: createForm.description || null,
+      token: createForm.token as any,
+      target_tokens: createForm.target_tokens.length > 0 ? createForm.target_tokens : null,
+    }).select().single();
+
+    setCreating(false);
+
+    if (error) {
+      toast({ title: "Could not create pool", description: error.message, variant: "destructive" });
+      return;
+    }
+
+    if (data) {
+      setPools((prev) => [{
+        id: data.id,
+        name: data.name,
+        description: data.description ?? "",
+        total_value: Number(data.total_value),
+        member_count: data.member_count,
+        token: data.token as PoolToken,
+        target_tokens: data.target_tokens ?? [],
+        is_active: data.is_active,
+        my_contribution: 0,
+        my_share: 0,
+      }, ...prev]);
+      emitStackrDataChanged();
       toast({ title: "Pool created!", description: `${createForm.name} is ready to share.` });
       setCreateForm({ name: "", description: "", token: "SOL", target_tokens: [], min_contribution: "", pool_size_limit: "" });
       setView("active");
-      setCreating(false);
-    }, 600);
+    }
   };
 
-  const joinPool = (pool: DemoPool) => {
+  const joinPool = (pool: PoolData) => {
     const amount = joinAmounts[pool.id];
     if (!amount || Number(amount) <= 0) {
       toast({ title: "Enter a valid contribution", variant: "destructive" });
@@ -137,11 +202,12 @@ const PoolsSection = () => {
     toast({ title: "Pool left!", description: "Your contribution will be returned." });
   };
 
+  const handleDemoClick = () => toast({ title: "This is a demo", description: "Create your own to get started!" });
+
   return (
     <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.4, ease: [0.16, 1, 0.3, 1] }}>
       <PoolDetailsModal pool={detailsPool} onClose={() => setDetailsPool(null)} onLeavePool={leavePool} />
 
-      {/* Leave pool confirmation dialog */}
       {confirmLeaveId && (
         <div className="fixed inset-0 z-40 flex items-center justify-center bg-background/80 backdrop-blur-sm p-4">
           <div className="w-full max-w-md rounded-3xl border border-destructive/30 bg-card p-6 shadow-[0_0_40px_hsl(var(--destructive)/0.15)]">
@@ -172,16 +238,10 @@ const PoolsSection = () => {
         </div>
       </div>
 
-      {/* Search bar */}
       {(view === "active" || view === "voting") && (
         <div className="relative mb-4">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-          <Input
-            placeholder="Search pools..."
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            className="bg-secondary border-border pl-10"
-          />
+          <Input placeholder="Search pools..." value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} className="bg-secondary border-border pl-10" />
         </div>
       )}
 
@@ -213,7 +273,7 @@ const PoolsSection = () => {
                   <button key={token} type="button" onClick={() => toggleTargetToken(token)} className={`rounded-lg px-2 py-2 text-xs font-semibold border transition-all ${createForm.target_tokens.includes(token) ? "border-primary/60 bg-primary text-primary-foreground shadow-[0_0_16px_hsl(var(--primary)/0.24)]" : "border-border bg-secondary text-muted-foreground hover:border-primary/40"}`}>{token}</button>
                 ))}
               </div>
-              <Button className="w-full" onClick={createPool} disabled={creating}>
+              <Button className="w-full" onClick={() => void createPool()} disabled={creating}>
                 {creating ? <><Loader2 className="w-4 h-4 mr-2 animate-spin" />Creating...</> : "Create Pool"}
               </Button>
             </div>
@@ -305,10 +365,10 @@ const PoolsSection = () => {
             <p className="text-sm text-muted-foreground text-center py-8">No pools found matching "{searchQuery}"</p>
           )}
           <div className="grid sm:grid-cols-2 gap-4">
-            {(pools.length > 0 ? filteredPools : [demoPool]).map((pool) => {
+            {filteredPools.map((pool) => {
               const isDemo = !!pool.isDemo;
               return (
-              <motion.div key={pool.id} initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className={`rounded-2xl border border-border bg-card p-6 relative overflow-hidden ${isDemo ? "opacity-60" : ""}`}>
+              <motion.div key={pool.id} initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="rounded-2xl border border-border bg-card p-6 relative overflow-hidden" onClick={isDemo ? handleDemoClick : undefined}>
                 <div className="absolute inset-0 bg-gradient-to-br from-primary/5 via-transparent to-accent/5 opacity-70" />
                 <div className="relative z-10">
                   <div className="flex items-start justify-between mb-3">
@@ -322,8 +382,8 @@ const PoolsSection = () => {
                     <Badge variant="outline" className={`text-xs border ${tokenColors[pool.token]}`}>{pool.token}</Badge>
                   </div>
                   <div className="grid grid-cols-2 gap-3 mb-4">
-                    <div className="rounded-xl bg-secondary p-3"><p className="text-[10px] text-muted-foreground uppercase tracking-wider">My Contribution</p><p className="text-sm font-bold text-foreground">{pool.my_contribution} {pool.token}</p></div>
-                    <div className="rounded-xl bg-secondary p-3"><p className="text-[10px] text-muted-foreground uppercase tracking-wider">My Share</p><p className="text-sm font-bold text-foreground">{pool.my_share}%</p></div>
+                    <div className="rounded-xl bg-secondary p-3"><p className="text-[10px] text-muted-foreground uppercase tracking-wider">My Contribution</p><p className="text-sm font-bold text-foreground">{pool.my_contribution ?? 0} {pool.token}</p></div>
+                    <div className="rounded-xl bg-secondary p-3"><p className="text-[10px] text-muted-foreground uppercase tracking-wider">My Share</p><p className="text-sm font-bold text-foreground">{pool.my_share ?? 0}%</p></div>
                     <div className="rounded-xl bg-secondary p-3"><p className="text-[10px] text-muted-foreground uppercase tracking-wider">Pool Value</p><p className="text-sm font-bold text-foreground">{pool.total_value.toLocaleString()} {pool.token}</p></div>
                     <div className="rounded-xl bg-secondary p-3"><p className="text-[10px] text-muted-foreground uppercase tracking-wider">Members</p><p className="text-sm font-bold text-foreground flex items-center gap-1"><Users className="w-3 h-3 text-muted-foreground" />{pool.member_count}</p></div>
                   </div>
