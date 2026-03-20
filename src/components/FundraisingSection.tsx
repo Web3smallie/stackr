@@ -150,9 +150,7 @@ const FundraisingSection = () => {
       });
 
       toast({ title: "Contribution sent!", description: `${contributionAmount} ${contributionToken} sent to ${showContributeGoal.title}.` });
-      if (bagsResult.success) {
-        toast({ title: "💼 Bags Fee Sharing", description: bagsResult.message });
-      }
+      toast({ title: bagsResult.success ? "🎒 Bags Fee Sharing Active" : "⚠️ Bags Fee Sharing", description: bagsResult.message });
       setShowContributeGoal(null);
       setContributionAmount("");
     } catch (err: any) {

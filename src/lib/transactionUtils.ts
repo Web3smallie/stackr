@@ -31,6 +31,7 @@ export async function registerBagsFeeSharing({
   transactionType: string;
   transactionSignature?: string | null;
 }): Promise<{ success: boolean; message: string }> {
+  console.log("[BagsFeeSharing] Calling registerBagsFeeSharing:", { amount, token, fromWallet, toWallet, transactionType, transactionSignature });
   try {
     const { data, error } = await supabase.functions.invoke("bags-fee-sharing", {
       body: {
@@ -43,17 +44,21 @@ export async function registerBagsFeeSharing({
       },
     });
 
+    console.log("[BagsFeeSharing] Response:", { data, error });
+
     if (error) {
-      console.warn("Bags fee sharing call failed:", error);
-      return { success: false, message: "Fee sharing registration skipped" };
+      console.warn("[BagsFeeSharing] Invocation error:", error);
+      return { success: false, message: "⚠️ Bags fee sharing call failed — transaction still recorded" };
     }
 
     return {
       success: data?.success ?? false,
-      message: data?.success ? "Bags fee sharing registered ✓" : "Fee sharing skipped",
+      message: data?.success
+        ? "🎒 Bags Fee Sharing Active — transaction registered with Bags.fm"
+        : "⚠️ Bags fee sharing registered with warnings",
     };
   } catch (e) {
-    console.warn("Bags fee sharing error:", e);
-    return { success: false, message: "Fee sharing registration skipped" };
+    console.warn("[BagsFeeSharing] Exception:", e);
+    return { success: false, message: "⚠️ Bags fee sharing unavailable — transaction still recorded" };
   }
 }

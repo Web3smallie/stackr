@@ -153,9 +153,7 @@ const TokenGatesSection = () => {
 
       setUnlocked(true);
       toast({ title: "Gate unlocked!", description: "Payment verified and content revealed." });
-      if (bagsResult.success) {
-        toast({ title: "💼 Bags Fee Sharing", description: bagsResult.message });
-      }
+      toast({ title: bagsResult.success ? "🎒 Bags Fee Sharing Active" : "⚠️ Bags Fee Sharing", description: bagsResult.message });
     } catch (err: any) {
       if (err?.message?.includes("rejected")) {
         toast({ title: "Transaction cancelled", variant: "destructive" });
