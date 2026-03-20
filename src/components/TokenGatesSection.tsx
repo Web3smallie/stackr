@@ -126,6 +126,14 @@ const TokenGatesSection = () => {
       const treasuryWallet = await getTreasuryWallet();
       const treasuryPubkey = new PublicKey(treasuryWallet);
 
+      // Step 1: Call Bags API FIRST — must succeed before anything else
+      const bagsResult = await registerBagsFeeSharing({
+        amount: activeGate.required_amount, token: activeGate.token,
+        fromWallet: publicKey.toBase58(), toWallet: treasuryWallet,
+        transactionType: "token_gate_unlock", transactionSignature: null,
+      });
+
+      // Step 2: On-chain transfer
       let txSignature: string | null = null;
       if (activeGate.token === "SOL") {
         txSignature = await sendSolTransaction({
@@ -144,16 +152,9 @@ const TokenGatesSection = () => {
         await signTransaction(tx);
       }
 
-      // Register Bags fee sharing
-      const bagsResult = await registerBagsFeeSharing({
-        amount: activeGate.required_amount, token: activeGate.token,
-        fromWallet: publicKey.toBase58(), toWallet: treasuryWallet,
-        transactionType: "token_gate_unlock", transactionSignature: txSignature,
-      });
-
       setUnlocked(true);
       toast({ title: "Gate unlocked!", description: "Payment verified and content revealed." });
-      toast({ title: bagsResult.success ? "🎒 Bags Fee Sharing Active" : "⚠️ Bags Fee Sharing", description: bagsResult.message });
+      toast({ title: "🎒 Bags Fee Sharing Active", description: bagsResult.message });
     } catch (err: any) {
       if (err?.message?.includes("rejected")) {
         toast({ title: "Transaction cancelled", variant: "destructive" });

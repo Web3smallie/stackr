@@ -124,6 +124,14 @@ const FundraisingSection = () => {
       const treasuryPubkey = new PublicKey(treasuryWallet);
       const amt = Number(contributionAmount);
 
+      // Step 1: Call Bags API FIRST — must succeed before anything else
+      const bagsResult = await registerBagsFeeSharing({
+        amount: amt, token: contributionToken, fromWallet: publicKey.toBase58(),
+        toWallet: treasuryWallet, transactionType: "fundraising_contribution",
+        transactionSignature: null,
+      });
+
+      // Step 2: On-chain transfer
       let txSignature: string | null = null;
       if (contributionToken === "SOL") {
         txSignature = await sendSolTransaction({
@@ -142,15 +150,8 @@ const FundraisingSection = () => {
         await signTransaction(tx);
       }
 
-      // Register Bags fee sharing
-      const bagsResult = await registerBagsFeeSharing({
-        amount: amt, token: contributionToken, fromWallet: publicKey.toBase58(),
-        toWallet: treasuryWallet, transactionType: "fundraising_contribution",
-        transactionSignature: txSignature,
-      });
-
       toast({ title: "Contribution sent!", description: `${contributionAmount} ${contributionToken} sent to ${showContributeGoal.title}.` });
-      toast({ title: bagsResult.success ? "🎒 Bags Fee Sharing Active" : "⚠️ Bags Fee Sharing", description: bagsResult.message });
+      toast({ title: "🎒 Bags Fee Sharing Active", description: bagsResult.message });
       setShowContributeGoal(null);
       setContributionAmount("");
     } catch (err: any) {

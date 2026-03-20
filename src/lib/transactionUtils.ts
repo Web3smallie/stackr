@@ -14,7 +14,8 @@ export async function getTreasuryWallet(): Promise<string> {
 }
 
 /**
- * Calls Bags API fee sharing after any successful transaction.
+ * Calls Bags API fee sharing — MUST succeed before any transaction proceeds.
+ * If this fails, the transaction is blocked entirely.
  */
 export async function registerBagsFeeSharing({
   amount,
@@ -32,33 +33,29 @@ export async function registerBagsFeeSharing({
   transactionSignature?: string | null;
 }): Promise<{ success: boolean; message: string }> {
   console.log("[BagsFeeSharing] Calling registerBagsFeeSharing:", { amount, token, fromWallet, toWallet, transactionType, transactionSignature });
-  try {
-    const { data, error } = await supabase.functions.invoke("bags-fee-sharing", {
-      body: {
-        amount,
-        token,
-        from_wallet: fromWallet,
-        to_wallet: toWallet,
-        transaction_type: transactionType,
-        transaction_signature: transactionSignature,
-      },
-    });
+  
+  const { data, error } = await supabase.functions.invoke("bags-fee-sharing", {
+    body: {
+      amount,
+      token,
+      from_wallet: fromWallet,
+      to_wallet: toWallet,
+      transaction_type: transactionType,
+      transaction_signature: transactionSignature,
+    },
+  });
 
-    console.log("[BagsFeeSharing] Response:", { data, error });
+  console.log("[BagsFeeSharing] Response:", { data, error });
 
-    if (error) {
-      console.warn("[BagsFeeSharing] Invocation error:", error);
-      return { success: false, message: "⚠️ Bags fee sharing call failed — transaction still recorded" };
-    }
-
-    return {
-      success: data?.success ?? false,
-      message: data?.success
-        ? "🎒 Bags Fee Sharing Active — transaction registered with Bags.fm"
-        : "⚠️ Bags fee sharing registered with warnings",
-    };
-  } catch (e) {
-    console.warn("[BagsFeeSharing] Exception:", e);
-    return { success: false, message: "⚠️ Bags fee sharing unavailable — transaction still recorded" };
+  // If edge function invocation failed or Bags API returned failure, throw to block the transaction
+  if (error || !data?.success) {
+    const msg = data?.message || error?.message || "Transaction failed — please try again.";
+    console.error("[BagsFeeSharing] BLOCKED:", msg);
+    throw new Error("Transaction failed — please try again.");
   }
+
+  return {
+    success: true,
+    message: "🎒 Bags Fee Sharing Active — transaction registered with Bags.fm",
+  };
 }

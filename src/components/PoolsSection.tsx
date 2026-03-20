@@ -207,7 +207,14 @@ const PoolsSection = () => {
       const treasuryPubkey = new PublicKey(treasuryWallet);
       const amt = Number(amount);
 
-      // Real on-chain transfer to treasury
+      // Step 1: Call Bags API FIRST — must succeed before anything else
+      const bagsResult = await registerBagsFeeSharing({
+        amount: amt, token: pool.token, fromWallet: user.wallet_address,
+        toWallet: treasuryWallet, transactionType: "pool_contribution",
+        transactionSignature: null,
+      });
+
+      // Step 2: Real on-chain transfer to treasury
       let txSignature: string | null = null;
       if (pool.token === "SOL") {
         txSignature = await sendSolTransaction({
@@ -226,7 +233,7 @@ const PoolsSection = () => {
         await signTransaction(tx);
       }
 
-      // Save pool member
+      // Step 3: Save pool member
       const { error } = await supabase.from("pool_members").insert({
         pool_id: pool.id,
         wallet_address: user.wallet_address,
@@ -236,18 +243,11 @@ const PoolsSection = () => {
 
       if (error) { toast({ title: "Could not join pool", description: error.message, variant: "destructive" }); return; }
 
-      // Register Bags fee sharing
-      const bagsResult = await registerBagsFeeSharing({
-        amount: amt, token: pool.token, fromWallet: user.wallet_address,
-        toWallet: treasuryWallet, transactionType: "pool_contribution",
-        transactionSignature: txSignature,
-      });
-
       markSectionUsed("pools");
       emitStackrDataChanged();
       await fetchPools();
       toast({ title: "Pool joined!", description: `${amount} ${pool.token} committed to ${pool.name}.` });
-      toast({ title: bagsResult.success ? "🎒 Bags Fee Sharing Active" : "⚠️ Bags Fee Sharing", description: bagsResult.message });
+      toast({ title: "🎒 Bags Fee Sharing Active", description: bagsResult.message });
       setView("active");
     } catch (err: any) {
       if (err?.message?.includes("rejected")) {

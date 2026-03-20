@@ -11,10 +11,11 @@ serve(async (req) => {
   try {
     const BAGS_API_KEY = Deno.env.get("VITE_BAGS_API_KEY");
     console.log("VITE_BAGS_API_KEY is set:", !!BAGS_API_KEY);
+
     if (!BAGS_API_KEY) {
-      console.warn("VITE_BAGS_API_KEY is missing — skipping Bags API call but returning success for toast");
-      return new Response(JSON.stringify({ success: true, message: "Bags fee sharing registered (key pending)" }), {
-        status: 200,
+      console.error("VITE_BAGS_API_KEY is missing — transaction BLOCKED");
+      return new Response(JSON.stringify({ success: false, message: "Transaction failed — please try again." }), {
+        status: 400,
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     }
@@ -37,50 +38,40 @@ serve(async (req) => {
       timestamp: new Date().toISOString(),
     };
 
-    // Try multiple Bags API endpoints
-    const endpoints = [
-      "https://api.bags.fm/api/v1/fee-sharing/register",
-      "https://api.bags.fm/v1/fee-sharing/register",
-      "https://api.bags.fm/fee-sharing/register",
-    ];
+    // Use official Bags API v2 endpoint
+    const endpoint = "https://public-api-v2.bags.fm/api/v1/fee-share/config";
+    console.log("Calling Bags API:", endpoint);
 
-    let lastStatus = 0;
-    for (const endpoint of endpoints) {
-      try {
-        console.log("Trying Bags endpoint:", endpoint);
-        const response = await fetch(endpoint, {
-          method: "POST",
-          headers: {
-            "Authorization": `Bearer ${BAGS_API_KEY}`,
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify(payload),
-        });
-        lastStatus = response.status;
-        const responseText = await response.text();
-        console.log(`Bags API response from ${endpoint}:`, response.status, responseText);
+    const response = await fetch(endpoint, {
+      method: "POST",
+      headers: {
+        "x-api-key": BAGS_API_KEY,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify(payload),
+    });
 
-        if (response.ok) {
-          let data = {};
-          try { data = JSON.parse(responseText); } catch {}
-          return new Response(JSON.stringify({ success: true, data }), {
-            headers: { ...corsHeaders, "Content-Type": "application/json" },
-          });
-        }
-      } catch (fetchErr) {
-        console.warn(`Bags endpoint ${endpoint} failed:`, fetchErr);
-      }
+    const responseText = await response.text();
+    console.log("Bags API response:", response.status, responseText);
+
+    if (response.ok) {
+      let data = {};
+      try { data = JSON.parse(responseText); } catch {}
+      return new Response(JSON.stringify({ success: true, data }), {
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
     }
 
-    // All endpoints failed — still return success so toast shows
-    console.warn("All Bags API endpoints returned errors. Last status:", lastStatus);
-    return new Response(JSON.stringify({ success: true, message: `Bags fee sharing logged (API status: ${lastStatus})` }), {
+    // Bags API call failed — BLOCK the transaction
+    console.error("Bags API failed with status:", response.status);
+    return new Response(JSON.stringify({ success: false, message: "Transaction failed — please try again." }), {
+      status: 400,
       headers: { ...corsHeaders, "Content-Type": "application/json" },
     });
   } catch (e) {
     console.error("Bags fee sharing error:", e);
-    return new Response(JSON.stringify({ success: false, message: e instanceof Error ? e.message : "Unknown error" }), {
-      status: 200,
+    return new Response(JSON.stringify({ success: false, message: "Transaction failed — please try again." }), {
+      status: 500,
       headers: { ...corsHeaders, "Content-Type": "application/json" },
     });
   }
