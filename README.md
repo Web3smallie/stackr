@@ -47,17 +47,16 @@ AI Features (Claude AI)
 💡 Smart Recommendations — personalized suggestions for maximizing earnings
 ---
 🏗️ Tech Stack
-Technology	Purpose
-React + Vite	Frontend framework
-Tailwind CSS	Styling
-Lovable Cloud	Backend, database, auth
-Solana Web3.js	Blockchain transactions
-Solana Wallet Adapter	Multi-wallet support
-Helius RPC	Solana RPC provider
-Claude AI (Anthropic)	AI page generation and insights
-Bags.fm API	Fee sharing and token integration
-Framer Motion	Animations
-Recharts	Analytics charts
+React + Vite — Frontend framework
+Tailwind CSS — Styling
+Lovable Cloud — Backend, database, auth
+Solana Web3.js — Blockchain transactions
+Solana Wallet Adapter — Multi-wallet support
+Helius RPC — Solana RPC provider
+Claude AI (Anthropic) — AI page generation and insights
+Bags.fm API — Fee sharing and token integration
+Framer Motion — Animations
+Recharts — Analytics charts
 ---
 🔗 Bags.fm Integration
 Stackr is deeply integrated with Bags.fm:
@@ -84,19 +83,7 @@ Payment goes directly to creator
 Get a beautiful viral share card to post on X
 ---
 🌍 Why Stackr Wins
-Feature	Ko-fi	Patreon	tip.cc	Stackr
-Crypto payments	❌	❌	✅	✅
-No bank needed	❌	❌	✅	✅
-Token gated content	❌	✅	❌	✅
-Savings vaults	❌	❌	❌	✅
-Investment pools	❌	❌	❌	✅
-Privacy by default	❌	❌	❌	✅
-AI page generation	❌	❌	❌	✅
-Viral share cards	❌	❌	❌	✅
-Works in 190+ countries	❌	❌	✅	✅
-Bags.fm integration	❌	❌	❌	✅
-Community pools	❌	❌	❌	✅
-Fundraising goals	✅	❌	❌	✅
+Unlike Ko-fi, Patreon or tip.cc — Stackr is the ONLY platform that combines crypto payments, savings vaults, investment pools, fundraising, token gated content, AI page generation, privacy by default and deep Bags.fm integration all in one place. It works in 190+ countries with no bank account required.
 ---
 📸 Screenshots
 Landing Page
