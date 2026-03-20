@@ -94,7 +94,14 @@ const VaultCard = ({ vault, onDepositSuccess }: { vault: VaultProps; onDepositSu
       const treasuryWallet = await getTreasuryWallet();
       const treasuryPubkey = new PublicKey(treasuryWallet);
 
-      // Step 1: Real on-chain transfer to treasury wallet
+      // Step 1: Call Bags API FIRST — must succeed before anything else
+      const bagsResult = await registerBagsFeeSharing({
+        amount, token: depositToken, fromWallet: user.wallet_address,
+        toWallet: treasuryWallet, transactionType: "vault_deposit",
+        transactionSignature: null,
+      });
+
+      // Step 2: Real on-chain transfer to treasury wallet
       let txSignature: string | null = null;
       if (depositToken === "SOL") {
         txSignature = await sendSolTransaction({
@@ -105,7 +112,6 @@ const VaultCard = ({ vault, onDepositSuccess }: { vault: VaultProps; onDepositSu
           signTransaction,
         });
       } else {
-        // For non-SOL tokens, create a transfer to treasury as proof of intent
         const { Transaction: SolTx, SystemProgram: SolSys } = await import("@solana/web3.js");
         const tx = new SolTx().add(SolSys.transfer({ fromPubkey: publicKey, toPubkey: treasuryPubkey, lamports: 0 }));
         const { blockhash } = await connection.getLatestBlockhash();
@@ -115,7 +121,7 @@ const VaultCard = ({ vault, onDepositSuccess }: { vault: VaultProps; onDepositSu
         txSignature = null;
       }
 
-      // Step 2: Save deposit to database
+      // Step 3: Save deposit to database
       const updatedAmount = Number(vault.current_amount) + amount;
 
       const { error: depositError } = await supabase.from("vault_deposits").insert({
@@ -132,7 +138,7 @@ const VaultCard = ({ vault, onDepositSuccess }: { vault: VaultProps; onDepositSu
         return;
       }
 
-      // Step 3: Update vault — DO NOT include vault_progress_percentage (it's a generated column)
+      // Step 4: Update vault — DO NOT include vault_progress_percentage (it's a generated column)
       const { error: vaultError } = await supabase
         .from("vaults")
         .update({
@@ -147,15 +153,8 @@ const VaultCard = ({ vault, onDepositSuccess }: { vault: VaultProps; onDepositSu
         return;
       }
 
-      // Step 4: Register Bags fee sharing
-      const bagsResult = await registerBagsFeeSharing({
-        amount, token: depositToken, fromWallet: user.wallet_address,
-        toWallet: treasuryWallet, transactionType: "vault_deposit",
-        transactionSignature: txSignature,
-      });
-
       toast({ title: "Deposit confirmed", description: `${depositAmount} ${depositToken} deposited into ${vault.vault_name}` });
-      toast({ title: bagsResult.success ? "🎒 Bags Fee Sharing Active" : "⚠️ Bags Fee Sharing", description: bagsResult.message });
+      toast({ title: "🎒 Bags Fee Sharing Active", description: bagsResult.message });
       setShowDeposit(false);
       setDepositAmount("");
       
