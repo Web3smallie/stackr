@@ -3,7 +3,7 @@ import { Gift, Copy, Trophy, Users, Check } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/contexts/AuthContext";
 import { useState } from "react";
-import { APP_DOMAIN } from "@/lib/appUrl";
+import { APP_URL } from "@/lib/appUrl";
 import { toast } from "@/hooks/use-toast";
 import DemoBadge from "@/components/DemoBadge";
 
