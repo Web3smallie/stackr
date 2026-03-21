@@ -71,16 +71,32 @@ const LandingPage = () => {
 
   useEffect(() => {
     const fetchLiveStats = async () => {
-      const [pagesRes, usersRes, paymentsRes] = await Promise.all([
+      const [pagesRes, usersRes, paymentsRes, depositsRes, poolMembersRes, fundraisingRes] = await Promise.all([
         supabase.from("payment_pages").select("id", { count: "exact", head: true }),
         supabase.from("users").select("id", { count: "exact", head: true }),
         supabase.from("payments").select("amount"),
+        supabase.from("vault_deposits").select("amount"),
+        supabase.from("pool_members").select("contribution"),
+        supabase.from("fundraising_goals").select("current_amount").gt("current_amount", 0),
       ]);
+
+      const paymentAmounts = (paymentsRes.data ?? []);
+      const depositAmounts = (depositsRes.data ?? []);
+      const poolAmounts = (poolMembersRes.data ?? []);
+      const fundraisingAmounts = (fundraisingRes.data ?? []);
+
+      const totalTransactions = paymentAmounts.length + depositAmounts.length + poolAmounts.length + fundraisingAmounts.length;
+      const totalVolume =
+        paymentAmounts.reduce((sum, p) => sum + Number(p.amount), 0) +
+        depositAmounts.reduce((sum, d) => sum + Number(d.amount), 0) +
+        poolAmounts.reduce((sum, m) => sum + Number(m.contribution), 0) +
+        fundraisingAmounts.reduce((sum, f) => sum + Number(f.current_amount), 0);
+
       setLiveStats({
         pages: pagesRes.count ?? 0,
         creators: usersRes.count ?? 0,
-        transactions: (paymentsRes.data ?? []).length,
-        volume: (paymentsRes.data ?? []).reduce((sum, p) => sum + Number(p.amount), 0),
+        transactions: totalTransactions,
+        volume: totalVolume,
       });
     };
     fetchLiveStats();
