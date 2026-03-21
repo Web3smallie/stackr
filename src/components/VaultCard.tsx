@@ -92,14 +92,7 @@ const VaultCard = ({ vault, onDepositSuccess }: { vault: VaultProps; onDepositSu
       // Fetch treasury wallet — vault deposits go to treasury (held until unlock)
       const treasuryWallet = await getTreasuryWallet();
 
-      // Step 1: Call Bags API FIRST — must succeed before anything else
-      const bagsResult = await registerBagsFeeSharing({
-        amount, token: depositToken, fromWallet: user.wallet_address,
-        toWallet: treasuryWallet, transactionType: "vault_deposit",
-        transactionSignature: null,
-      });
-
-      // Step 2: Real on-chain transfer to treasury wallet (all tokens)
+      // Step 1: Real on-chain transfer to treasury wallet (all tokens)
       const txSignature = await sendTreasuryTransfer({
         connection,
         fromPubkey: publicKey,
@@ -108,6 +101,13 @@ const VaultCard = ({ vault, onDepositSuccess }: { vault: VaultProps; onDepositSu
         token: depositToken,
         signTransaction,
       });
+
+      // Step 2: Register with Bags API AFTER on-chain success (non-blocking)
+      registerBagsFeeSharing({
+        amount, token: depositToken, fromWallet: user.wallet_address,
+        toWallet: treasuryWallet, transactionType: "vault_deposit",
+        transactionSignature: txSignature,
+      }).catch((e) => console.warn("[BagsFeeSharing] Registration failed:", e));
 
       // Step 3: Save deposit to database
       const updatedAmount = Number(vault.current_amount) + amount;
