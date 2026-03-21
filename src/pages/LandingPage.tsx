@@ -62,6 +62,30 @@ const LandingPage = () => {
   const heroRef = useRef(null);
   const heroInView = useInView(heroRef, { once: true });
 
+  const [liveStats, setLiveStats] = useState({
+    pages: 0,
+    creators: 0,
+    transactions: 0,
+    volume: 0,
+  });
+
+  useEffect(() => {
+    const fetchLiveStats = async () => {
+      const [pagesRes, usersRes, paymentsRes] = await Promise.all([
+        supabase.from("payment_pages").select("id", { count: "exact", head: true }),
+        supabase.from("users").select("id", { count: "exact", head: true }),
+        supabase.from("payments").select("amount"),
+      ]);
+      setLiveStats({
+        pages: pagesRes.count ?? 0,
+        creators: usersRes.count ?? 0,
+        transactions: (paymentsRes.data ?? []).length,
+        volume: (paymentsRes.data ?? []).reduce((sum, p) => sum + Number(p.amount), 0),
+      });
+    };
+    fetchLiveStats();
+  }, []);
+
   return (
     <div className="min-h-screen gradient-bg">
       <header className="fixed top-0 left-0 right-0 z-50 glass">
