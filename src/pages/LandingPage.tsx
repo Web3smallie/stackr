@@ -16,6 +16,7 @@ import { Button } from "@/components/ui/button";
 import { useNavigate } from "react-router-dom";
 import Footer from "@/components/Footer";
 import LiveActivityFeed from "@/components/LiveActivityFeed";
+import { supabase } from "@/integrations/supabase/client";
 
 const stats = [
   { value: "1.4B", label: "Creators underserved", subtitle: null },
