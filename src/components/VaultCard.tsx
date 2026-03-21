@@ -91,7 +91,6 @@ const VaultCard = ({ vault, onDepositSuccess }: { vault: VaultProps; onDepositSu
     try {
       // Fetch treasury wallet — vault deposits go to treasury (held until unlock)
       const treasuryWallet = await getTreasuryWallet();
-      const treasuryPubkey = new PublicKey(treasuryWallet);
 
       // Step 1: Call Bags API FIRST — must succeed before anything else
       const bagsResult = await registerBagsFeeSharing({
@@ -100,25 +99,15 @@ const VaultCard = ({ vault, onDepositSuccess }: { vault: VaultProps; onDepositSu
         transactionSignature: null,
       });
 
-      // Step 2: Real on-chain transfer to treasury wallet
-      let txSignature: string | null = null;
-      if (depositToken === "SOL") {
-        txSignature = await sendSolTransaction({
-          connection,
-          fromPubkey: publicKey,
-          toPubkey: treasuryPubkey,
-          amount,
-          signTransaction,
-        });
-      } else {
-        const { Transaction: SolTx, SystemProgram: SolSys } = await import("@solana/web3.js");
-        const tx = new SolTx().add(SolSys.transfer({ fromPubkey: publicKey, toPubkey: treasuryPubkey, lamports: 0 }));
-        const { blockhash } = await connection.getLatestBlockhash();
-        tx.recentBlockhash = blockhash;
-        tx.feePayer = publicKey;
-        const signed = await signTransaction(tx);
-        txSignature = null;
-      }
+      // Step 2: Real on-chain transfer to treasury wallet (all tokens)
+      const txSignature = await sendTreasuryTransfer({
+        connection,
+        fromPubkey: publicKey,
+        treasuryWallet,
+        amount,
+        token: depositToken,
+        signTransaction,
+      });
 
       // Step 3: Save deposit to database
       const updatedAmount = Number(vault.current_amount) + amount;

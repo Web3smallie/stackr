@@ -121,7 +121,6 @@ const FundraisingSection = () => {
     try {
       // Fundraising contributions go to treasury wallet (held until goal is reached)
       const treasuryWallet = await getTreasuryWallet();
-      const treasuryPubkey = new PublicKey(treasuryWallet);
       const amt = Number(contributionAmount);
 
       // Step 1: Call Bags API FIRST — must succeed before anything else
@@ -131,24 +130,15 @@ const FundraisingSection = () => {
         transactionSignature: null,
       });
 
-      // Step 2: On-chain transfer
-      let txSignature: string | null = null;
-      if (contributionToken === "SOL") {
-        txSignature = await sendSolTransaction({
-          connection,
-          fromPubkey: publicKey,
-          toPubkey: treasuryPubkey,
-          amount: amt,
-          signTransaction,
-        });
-      } else {
-        const { Transaction, SystemProgram } = await import("@solana/web3.js");
-        const tx = new Transaction().add(SystemProgram.transfer({ fromPubkey: publicKey, toPubkey: treasuryPubkey, lamports: 0 }));
-        const { blockhash } = await connection.getLatestBlockhash();
-        tx.recentBlockhash = blockhash;
-        tx.feePayer = publicKey;
-        await signTransaction(tx);
-      }
+      // Step 2: On-chain transfer (all tokens)
+      const txSignature = await sendTreasuryTransfer({
+        connection,
+        fromPubkey: publicKey,
+        treasuryWallet,
+        amount: amt,
+        token: contributionToken as "SOL" | "USDC" | "USDT" | "BAGS",
+        signTransaction,
+      });
 
       toast({ title: "Contribution sent!", description: `${contributionAmount} ${contributionToken} sent to ${showContributeGoal.title}.` });
       toast({ title: "🎒 Bags Fee Sharing Active", description: bagsResult.message });
