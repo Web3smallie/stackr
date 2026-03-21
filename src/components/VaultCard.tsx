@@ -12,9 +12,8 @@ import { useConnection } from "@solana/wallet-adapter-react";
 import { supabase } from "@/integrations/supabase/client";
 import { emitStackrDataChanged } from "@/lib/dataSync";
 import { toast } from "@/hooks/use-toast";
-import { sendSolTransaction } from "@/lib/solanaTransaction";
-import { PublicKey } from "@solana/web3.js";
 import { getTreasuryWallet, registerBagsFeeSharing } from "@/lib/transactionUtils";
+import { sendTreasuryTransfer } from "@/lib/treasuryTransfer";
 
 interface VaultProps {
   id?: string;
