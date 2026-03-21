@@ -123,14 +123,7 @@ const FundraisingSection = () => {
       const treasuryWallet = await getTreasuryWallet();
       const amt = Number(contributionAmount);
 
-      // Step 1: Call Bags API FIRST — must succeed before anything else
-      const bagsResult = await registerBagsFeeSharing({
-        amount: amt, token: contributionToken, fromWallet: publicKey.toBase58(),
-        toWallet: treasuryWallet, transactionType: "fundraising_contribution",
-        transactionSignature: null,
-      });
-
-      // Step 2: On-chain transfer (all tokens)
+      // Step 1: On-chain transfer (all tokens)
       const txSignature = await sendTreasuryTransfer({
         connection,
         fromPubkey: publicKey,
@@ -140,8 +133,14 @@ const FundraisingSection = () => {
         signTransaction,
       });
 
+      // Step 2: Register with Bags API AFTER on-chain success (non-blocking)
+      registerBagsFeeSharing({
+        amount: amt, token: contributionToken, fromWallet: publicKey.toBase58(),
+        toWallet: treasuryWallet, transactionType: "fundraising_contribution",
+        transactionSignature: txSignature,
+      }).catch((e) => console.warn("[BagsFeeSharing] Registration failed:", e));
+
       toast({ title: "Contribution sent!", description: `${contributionAmount} ${contributionToken} sent to ${showContributeGoal.title}.` });
-      toast({ title: "🎒 Bags Fee Sharing Active", description: bagsResult.message });
       setShowContributeGoal(null);
       setContributionAmount("");
     } catch (err: any) {
