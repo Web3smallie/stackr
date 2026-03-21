@@ -191,7 +191,7 @@ const LandingPage = () => {
               { value: liveStats.pages.toLocaleString(), label: "Payment Pages Created" },
               { value: liveStats.creators.toLocaleString(), label: "Total Creators" },
               { value: liveStats.transactions.toLocaleString(), label: "Transactions Processed" },
-              { value: `${liveStats.volume.toLocaleString(undefined, { maximumFractionDigits: 2 })}`, label: "Total Volume" },
+              { value: `${liveStats.volume.toLocaleString(undefined, { maximumFractionDigits: 2 })} SOL`, label: "Total Volume" },
             ].map((stat, i) => (
               <motion.div key={stat.label} variants={item} className={`py-10 px-4 text-center ${i < 3 ? "md:border-r border-border/40" : ""}`}>
                 <div className="font-display text-3xl sm:text-4xl font-bold text-primary tabular-nums">{stat.value}</div>
