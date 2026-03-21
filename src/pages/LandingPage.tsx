@@ -1,5 +1,5 @@
 import { motion, useInView } from "framer-motion";
-import { useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 import {
   ArrowRight,
   Zap,
@@ -16,6 +16,7 @@ import { Button } from "@/components/ui/button";
 import { useNavigate } from "react-router-dom";
 import Footer from "@/components/Footer";
 import LiveActivityFeed from "@/components/LiveActivityFeed";
+import { supabase } from "@/integrations/supabase/client";
 
 const stats = [
   { value: "1.4B", label: "Creators underserved", subtitle: null },
@@ -60,6 +61,30 @@ const LandingPage = () => {
   const navigate = useNavigate();
   const heroRef = useRef(null);
   const heroInView = useInView(heroRef, { once: true });
+
+  const [liveStats, setLiveStats] = useState({
+    pages: 0,
+    creators: 0,
+    transactions: 0,
+    volume: 0,
+  });
+
+  useEffect(() => {
+    const fetchLiveStats = async () => {
+      const [pagesRes, usersRes, paymentsRes] = await Promise.all([
+        supabase.from("payment_pages").select("id", { count: "exact", head: true }),
+        supabase.from("users").select("id", { count: "exact", head: true }),
+        supabase.from("payments").select("amount"),
+      ]);
+      setLiveStats({
+        pages: pagesRes.count ?? 0,
+        creators: usersRes.count ?? 0,
+        transactions: (paymentsRes.data ?? []).length,
+        volume: (paymentsRes.data ?? []).reduce((sum, p) => sum + Number(p.amount), 0),
+      });
+    };
+    fetchLiveStats();
+  }, []);
 
   return (
     <div className="min-h-screen gradient-bg">
@@ -158,6 +183,20 @@ const LandingPage = () => {
                 <div className="font-display text-3xl sm:text-4xl font-bold text-foreground tabular-nums">{stat.value}</div>
                 <div className="text-sm text-muted-foreground mt-1">{stat.label}</div>
                 {stat.subtitle && <div className="text-[11px] text-muted-foreground/60 mt-0.5">{stat.subtitle}</div>}
+              </motion.div>
+            ))}
+          </motion.div>
+          <motion.div className="grid grid-cols-2 md:grid-cols-4 border-t border-border/40" variants={container} initial="hidden" whileInView="show" viewport={{ once: true }}>
+            {[
+              { value: liveStats.pages.toLocaleString(), label: "Payment Pages Created" },
+              { value: liveStats.creators.toLocaleString(), label: "Total Creators" },
+              { value: liveStats.transactions.toLocaleString(), label: "Transactions Processed" },
+              { value: `${liveStats.volume.toLocaleString(undefined, { maximumFractionDigits: 2 })}`, label: "Total Volume" },
+            ].map((stat, i) => (
+              <motion.div key={stat.label} variants={item} className={`py-10 px-4 text-center ${i < 3 ? "md:border-r border-border/40" : ""}`}>
+                <div className="font-display text-3xl sm:text-4xl font-bold text-primary tabular-nums">{stat.value}</div>
+                <div className="text-sm text-muted-foreground mt-1">{stat.label}</div>
+                <div className="text-[11px] text-muted-foreground/60 mt-0.5">Live from database</div>
               </motion.div>
             ))}
           </motion.div>

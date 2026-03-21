@@ -15,8 +15,7 @@ import { emitStackrDataChanged, subscribeToStackrDataChanged } from "@/lib/dataS
 import { toast } from "@/hooks/use-toast";
 import { shouldShowDemo, markSectionUsed } from "@/lib/demoTracker";
 import { getTreasuryWallet, registerBagsFeeSharing } from "@/lib/transactionUtils";
-import { sendSolTransaction } from "@/lib/solanaTransaction";
-import { PublicKey } from "@solana/web3.js";
+import { sendTreasuryTransfer } from "@/lib/treasuryTransfer";
 
 const tokenColors: Record<string, string> = {
   SOL: "bg-orange-500/20 text-orange-400 border-orange-500/30",
@@ -204,7 +203,6 @@ const PoolsSection = () => {
     try {
       // Pool contributions go to treasury wallet
       const treasuryWallet = await getTreasuryWallet();
-      const treasuryPubkey = new PublicKey(treasuryWallet);
       const amt = Number(amount);
 
       // Step 1: Call Bags API FIRST — must succeed before anything else
@@ -214,24 +212,15 @@ const PoolsSection = () => {
         transactionSignature: null,
       });
 
-      // Step 2: Real on-chain transfer to treasury
-      let txSignature: string | null = null;
-      if (pool.token === "SOL") {
-        txSignature = await sendSolTransaction({
-          connection,
-          fromPubkey: publicKey,
-          toPubkey: treasuryPubkey,
-          amount: amt,
-          signTransaction,
-        });
-      } else {
-        const { Transaction, SystemProgram } = await import("@solana/web3.js");
-        const tx = new Transaction().add(SystemProgram.transfer({ fromPubkey: publicKey, toPubkey: treasuryPubkey, lamports: 0 }));
-        const { blockhash } = await connection.getLatestBlockhash();
-        tx.recentBlockhash = blockhash;
-        tx.feePayer = publicKey;
-        await signTransaction(tx);
-      }
+      // Step 2: Real on-chain transfer to treasury (all tokens)
+      const txSignature = await sendTreasuryTransfer({
+        connection,
+        fromPubkey: publicKey,
+        treasuryWallet,
+        amount: amt,
+        token: pool.token,
+        signTransaction,
+      });
 
       // Step 3: Save pool member
       const { error } = await supabase.from("pool_members").insert({
