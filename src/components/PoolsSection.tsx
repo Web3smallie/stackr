@@ -205,14 +205,7 @@ const PoolsSection = () => {
       const treasuryWallet = await getTreasuryWallet();
       const amt = Number(amount);
 
-      // Step 1: Call Bags API FIRST — must succeed before anything else
-      const bagsResult = await registerBagsFeeSharing({
-        amount: amt, token: pool.token, fromWallet: user.wallet_address,
-        toWallet: treasuryWallet, transactionType: "pool_contribution",
-        transactionSignature: null,
-      });
-
-      // Step 2: Real on-chain transfer to treasury (all tokens)
+      // Step 1: Real on-chain transfer to treasury (all tokens)
       const txSignature = await sendTreasuryTransfer({
         connection,
         fromPubkey: publicKey,
@@ -221,6 +214,13 @@ const PoolsSection = () => {
         token: pool.token,
         signTransaction,
       });
+
+      // Step 2: Register with Bags API AFTER on-chain success (non-blocking)
+      registerBagsFeeSharing({
+        amount: amt, token: pool.token, fromWallet: user.wallet_address,
+        toWallet: treasuryWallet, transactionType: "pool_contribution",
+        transactionSignature: txSignature,
+      }).catch((e) => console.warn("[BagsFeeSharing] Registration failed:", e));
 
       // Step 3: Save pool member
       const { error } = await supabase.from("pool_members").insert({
