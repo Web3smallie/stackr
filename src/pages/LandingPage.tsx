@@ -186,6 +186,20 @@ const LandingPage = () => {
               </motion.div>
             ))}
           </motion.div>
+          <motion.div className="grid grid-cols-2 md:grid-cols-4 border-t border-border/40" variants={container} initial="hidden" whileInView="show" viewport={{ once: true }}>
+            {[
+              { value: liveStats.pages.toLocaleString(), label: "Payment Pages Created" },
+              { value: liveStats.creators.toLocaleString(), label: "Total Creators" },
+              { value: liveStats.transactions.toLocaleString(), label: "Transactions Processed" },
+              { value: `${liveStats.volume.toLocaleString(undefined, { maximumFractionDigits: 2 })}`, label: "Total Volume" },
+            ].map((stat, i) => (
+              <motion.div key={stat.label} variants={item} className={`py-10 px-4 text-center ${i < 3 ? "md:border-r border-border/40" : ""}`}>
+                <div className="font-display text-3xl sm:text-4xl font-bold text-primary tabular-nums">{stat.value}</div>
+                <div className="text-sm text-muted-foreground mt-1">{stat.label}</div>
+                <div className="text-[11px] text-muted-foreground/60 mt-0.5">Live from database</div>
+              </motion.div>
+            ))}
+          </motion.div>
         </div>
       </section>
 
