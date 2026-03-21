@@ -142,7 +142,6 @@ const VaultCard = ({ vault, onDepositSuccess }: { vault: VaultProps; onDepositSu
       }
 
       toast({ title: "Deposit confirmed", description: `${depositAmount} ${depositToken} deposited into ${vault.vault_name}` });
-      toast({ title: "🎒 Bags Fee Sharing Active", description: bagsResult.message });
       setShowDeposit(false);
       setDepositAmount("");
       
